@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Giro Mágico | Línea Centrada Sin Scroll</title>
+    <title>Giro Mágico | Raspa Difícil + Sonido Real</title>
     <style>
         * {
             margin: 0;
@@ -52,7 +52,6 @@
             pointer-events: none;
         }
 
-        /* Header mejorado - más compacto y sin ocupar mucho espacio */
         .game-header {
             padding: 0.8rem 2rem;
             display: flex;
@@ -120,29 +119,23 @@
             color: #ead7ae;
         }
 
-        /* NUEVO: contenedor principal que centra las cartas verticalmente justo donde queremos */
-        /* Usamos flex para ocupar toda la altura y forzar el centrado vertical con espacio */
         .main-game-area {
             display: flex;
             flex-direction: column;
-            justify-content: center;  /* Centra verticalmente el contenido sobrante */
+            justify-content: center;
             align-items: center;
             width: 100vw;
-            height: calc(100vh - 80px); /* Resta altura aproximada del header para bajar las cartas */
-            margin-top: 0;
-            position: relative;
-            overflow-x: auto;
+            height: calc(100vh - 80px);
+            overflow-x: visible;
             overflow-y: hidden;
         }
 
-        /* Contenedor horizontal SIN scroll (porque usamos flex-wrap: nowrap y centrado) */
-        /* Eliminamos scroll horizontal y forzamos que todo quepa en una sola línea centrada */
         .cards-horizontal-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
-            overflow-x: visible;  /* Sin scroll horizontal */
+            overflow-x: visible;
             padding: 0 20px;
         }
 
@@ -152,18 +145,17 @@
             justify-content: center;
             align-items: center;
             gap: 2rem;
-            flex-wrap: nowrap;    /* Fuerza línea única horizontal */
+            flex-wrap: nowrap;
             width: auto;
             max-width: 100%;
             padding: 0.5rem;
         }
 
-        /* Diseño de carta basado en tu estilo - dimensiones elegantes */
         .card {
             width: 190px;
             height: 260px;
             background: url('cttro_ 🛵.jfif') center/cover no-repeat;
-            background-color: #222; 
+            background-color: #222;
             border-radius: 28px;
             display: flex;
             align-items: center;
@@ -173,7 +165,7 @@
             border: 1px solid rgba(212, 175, 55, 0.6);
             box-shadow: 0 20px 28px -12px black;
             position: relative;
-            flex-shrink: 0;       /* Evita que se encojan */
+            flex-shrink: 0;
         }
 
         .card:hover:not(.flipped) {
@@ -240,13 +232,6 @@
             font-weight: bold;
         }
 
-        /* Scroll personalizado - solo por si acaso en pantallas muy pequeñas, pero invisual */
-        .main-game-area::-webkit-scrollbar {
-            height: 0px;
-            background: transparent;
-        }
-
-        /* Modal personalizado */
         .custom-toast {
             position: fixed;
             bottom: 30px;
@@ -337,7 +322,6 @@
         .modal-btn.confirm { background: var(--gold); color: #1f1309; }
         .modal-btn.cancel { background: #2c241e; color: #ffe3ae; border: 1px solid #866f42; }
 
-        /* Pantalla de raspado full */
         .scratch-fullscreen {
             position: fixed;
             top: 0;
@@ -364,18 +348,35 @@
             background: radial-gradient(circle at center, #1e1a15, #020100);
         }
 
-        .prize-number {
-            font-size: clamp(3.5rem, 20vw, 18rem);
-            font-weight: 800;
-            font-family: monospace;
-            color: #f7de9c;
-            text-shadow: 0 0 30px #ffb347;
-            background: rgba(0,0,0,0.3);
-            padding: 0.2em 0.7em;
-            border-radius: 80px;
-            backdrop-filter: blur(5px);
+        /* Número semi-oculto inicialmente con opacidad baja y blur, más difícil de ver hasta raspar mucho */
+        .prize-number-container {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
         }
 
+        .prize-number {
+            font-size: clamp(4rem, 22vw, 22rem);
+            font-weight: 800;
+            font-family: monospace;
+            color: #d4af37;
+            text-shadow: 0 0 15px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
+            padding: 0.2em 0.7em;
+            border-radius: 80px;
+            backdrop-filter: blur(12px);
+            letter-spacing: 8px;
+            opacity: 0.55;
+            filter: blur(4px);
+            transition: opacity 0.4s, filter 0.4s;
+        }
+
+        /* Canvas de raspado más resistente, con textura granulada densa */
         .scratch-canvas {
             position: absolute;
             top: 0;
@@ -383,8 +384,10 @@
             width: 100%;
             height: 100%;
             cursor: url('https://cur.cursors-4u.net/others/oth-7/oth644.cur'), grabbing;
-            transition: opacity 0.65s cubic-bezier(0.23, 1, 0.32, 1);
-            z-index: 10;
+            transition: opacity 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 20;
+            touch-action: none;
+            background: transparent;
         }
 
         .close-full {
@@ -416,45 +419,34 @@
             bottom: 30px;
             width: 100%;
             text-align: center;
-            color: rgba(240, 215, 150, 0.7);
-            font-size: 0.9rem;
+            color: rgba(240, 215, 150, 0.85);
+            font-size: 1rem;
             letter-spacing: 2px;
             font-family: monospace;
             pointer-events: none;
+            z-index: 30;
+            text-shadow: 0 1px 2px black;
+            background: rgba(0,0,0,0.4);
+            padding: 6px 0;
+            backdrop-filter: blur(4px);
         }
 
-        /* Responsive: para pantallas medianas reducimos tamaño de cartas pero siguen centradas */
         @media (max-width: 1300px) {
             .cards-grid { gap: 1.5rem; }
             .card { width: 170px; height: 235px; }
         }
-
         @media (max-width: 1000px) {
             .cards-grid { gap: 1.2rem; }
             .card { width: 150px; height: 210px; }
-            .card:not(.flipped)::before { font-size: 2.6rem; width: 55px; height: 55px; }
         }
-
         @media (max-width: 800px) {
             .cards-grid { gap: 1rem; }
             .card { width: 135px; height: 190px; }
             .game-header { padding: 0.5rem 1rem; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px; }
-            .title-area h1 { font-size: 1rem; }
-            .stats { gap: 0.8rem; padding: 0.2rem 0.8rem; }
-            .stat-badge { font-size: 0.75rem; }
         }
-
         @media (max-width: 650px) {
             .cards-grid { gap: 0.9rem; }
             .card { width: 115px; height: 165px; border-radius: 20px; }
-            .card .card-number-display { font-size: 1.5rem; padding: 0.3rem 0.8rem; }
-            .card:not(.flipped)::before { font-size: 2rem; width: 45px; height: 45px; }
-        }
-
-        @media (max-width: 550px) {
-            .cards-grid { gap: 0.7rem; }
-            .card { width: 100px; height: 145px; border-radius: 18px; }
-            .main-game-area { height: calc(100vh - 85px); }
         }
 
         @keyframes elegantShuffle {
@@ -468,7 +460,7 @@
 <body>
 
     <header class="game-header" id="gameHeader">
-        <div class="title-area"><h1>✨ RASPA MÁGICA ✨</h1></div>
+        <div class="title-area"><h1>✨ RASPA DIFÍCIL ✨</h1></div>
         <div class="stats">
             <div class="stat-badge"><span id="openedCount">0</span>/<span id="totalCards">7</span></div>
             <div class="stat-badge">✧ <span id="remainingCount">7</span> rest.</div>
@@ -477,20 +469,18 @@
         <div class="countdown" id="countdownTimer">⏳ próximo: --</div>
     </header>
 
-    <!-- NUEVA ÁREA PRINCIPAL: centra las cartas abajo sin scroll obligatorio -->
     <div class="main-game-area">
         <div class="cards-horizontal-wrapper">
             <div class="cards-grid" id="cardsGrid"></div>
         </div>
     </div>
 
-    <!-- Modal -->
     <div id="confirmModal" class="modal-confirm">
         <div class="modal-card">
             <div class="attempt-counter" id="modalAttemptCounter">Intentos restantes: 3</div>
-            <p>¿Elegir esta carta?<br>Raspa para descubrir el número.</p>
+            <p>🔎 Elegí una carta<br>Raspá con esfuerzo para revelar el número oculto</p>
             <div class="modal-buttons">
-                <button id="confirmYesBtn" class="modal-btn confirm">✨ Sí, elegir</button>
+                <button id="confirmYesBtn" class="modal-btn confirm">✨ Raspar</button>
                 <button id="confirmNoBtn" class="modal-btn cancel">🔄 Otra carta</button>
             </div>
         </div>
@@ -498,13 +488,15 @@
 
     <div id="customToast" class="custom-toast"></div>
 
-    <!-- Fullscratch -->
+    <!-- Pantalla de raspado mejorada: número borroso y difícil -->
     <div id="scratchFullscreen" class="scratch-fullscreen">
         <div class="close-full" id="closeScratchBtn">✕</div>
         <div class="scratch-inner">
-            <div id="prizeNumberDisplay" class="prize-number">??</div>
+            <div class="prize-number-container">
+                <div id="prizeNumberDisplay" class="prize-number">??</div>
+            </div>
             <canvas id="scratchCanvas" class="scratch-canvas"></canvas>
-            <div class="instruction-text">← DESLIZA LENTAMENTE →</div>
+            <div class="instruction-text">🔨 RASPADO PESADO - DESLIZA CON FUERZA PARA DESCUBRIR 🔨</div>
         </div>
     </div>
 
@@ -531,35 +523,89 @@
         let autoRevealed = false;
         let fadeTimeout = null;
 
-        // Audio raspado
-        let scratchAudio = null;
-        function initAudio() {
+        // --- SISTEMA DE AUDIO MEJORADO CON SONIDO REAL DE RASPAJO (generador de ruido blanco dinámico) ---
+        let audioContext = null;
+        let scratchGain = null;
+        let scratchOsc = null;
+        let isAudioActive = false;
+
+        function initRealisticScratchAudio() {
             try {
+                if (audioContext && audioContext.state !== 'closed') return;
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                if (AudioContextClass) {
-                    const actx = new AudioContextClass();
-                    const buffer = actx.createBuffer(1, 6000, 22050);
+                audioContext = new AudioContextClass();
+                scratchGain = audioContext.createGain();
+                scratchGain.gain.value = 0;
+                scratchGain.connect(audioContext.destination);
+                
+                // Crear un buffer de ruido blanco filtrado para sonido de raspado realista
+                const bufferSize = 4096;
+                const noiseNode = (() => {
+                    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
                     const data = buffer.getChannelData(0);
-                    for (let i = 0; i < data.length; i++) {
-                        data[i] = (Math.random() - 0.5) * 0.28 * Math.exp(-i / 1400);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = (Math.random() * 2 - 1) * 0.6;
                     }
-                    scratchAudio = {
-                        play: () => {
-                            const src = actx.createBufferSource();
-                            src.buffer = buffer;
-                            const gain = actx.createGain();
-                            src.connect(gain);
-                            gain.connect(actx.destination);
-                            gain.gain.value = 0.2;
-                            src.start();
+                    const noise = audioContext.createBufferSource();
+                    noise.buffer = buffer;
+                    noise.loop = true;
+                    const biquad = audioContext.createBiquadFilter();
+                    biquad.type = "bandpass";
+                    biquad.frequency.value = 1800;
+                    biquad.Q.value = 1.2;
+                    noise.connect(biquad);
+                    biquad.connect(scratchGain);
+                    noise.start();
+                    return { noise, biquad };
+                })();
+                
+                return {
+                    playStart: () => {
+                        if (!audioContext) return;
+                        if (audioContext.state === 'suspended') audioContext.resume();
+                        if (scratchGain) scratchGain.gain.value = 0.48;
+                        isAudioActive = true;
+                    },
+                    playScratch: () => {
+                        if (!audioContext || !scratchGain) return;
+                        if (audioContext.state === 'suspended') audioContext.resume();
+                        if (scratchGain.gain.value < 0.55) scratchGain.gain.value = 0.55;
+                        // Pequeño pico dinámico
+                        setTimeout(() => {
+                            if (scratchGain && isAudioActive) scratchGain.gain.value = 0.48;
+                        }, 55);
+                    },
+                    playStop: () => {
+                        if (scratchGain) {
+                            scratchGain.gain.value = 0;
+                            isAudioActive = false;
                         }
-                    };
-                } else {
-                    scratchAudio = { play: () => {} };
-                }
-            } catch(e) { scratchAudio = { play: () => {} }; }
+                    }
+                };
+            } catch(e) {
+                console.warn("Audio no soportado", e);
+                return { playStart:()=>{}, playScratch:()=>{}, playStop:()=>{} };
+            }
         }
-        function playScratchSound() { if (scratchAudio && scratchAudio.play) scratchAudio.play(); }
+
+        let scratchSoundEngine = null;
+        function ensureAudioEngine() {
+            if (!scratchSoundEngine) scratchSoundEngine = initRealisticScratchAudio();
+            return scratchSoundEngine;
+        }
+
+        function playScratchSoundEffect() {
+            const engine = ensureAudioEngine();
+            if (engine && engine.playScratch) engine.playScratch();
+        }
+        function startScratchSound() {
+            const engine = ensureAudioEngine();
+            if (engine && engine.playStart) engine.playStart();
+        }
+        function stopScratchSound() {
+            const engine = ensureAudioEngine();
+            if (engine && engine.playStop) engine.playStop();
+        }
 
         function showCustomMessage(msg, isError = false) {
             const toast = document.getElementById("customToast");
@@ -698,28 +744,40 @@
 
         function closeConfirmModal() { document.getElementById("confirmModal").classList.remove("active"); pendingCardIdx = null; }
 
-        // --- SCRATCH con raspado lento y sonido ---
+        // --- RASPAJS CON TEXTURA DENSA Y DIFICULTAD ---
         async function startScratchExperience(cardIdx) {
             if (flippedState[cardIdx] || isTodayFlipUsed() || !canMakeAttempt()) return;
             currentScratchCardIndex = cardIdx;
-            document.getElementById("prizeNumberDisplay").innerText = cardNumbers[cardIdx];
+            const hiddenNumber = cardNumbers[cardIdx];
+            const numberDisplay = document.getElementById("prizeNumberDisplay");
+            numberDisplay.innerText = hiddenNumber;
+            // Número muy oculto: blur fuerte + opacidad baja
+            numberDisplay.style.opacity = "0.35";
+            numberDisplay.style.filter = "blur(8px)";
+            
             document.getElementById("gameHeader").classList.add("header-hidden");
             document.getElementById("scratchFullscreen").classList.add("active");
             document.body.style.overflow = "hidden";
+            
             scratchCanvasElem = document.getElementById("scratchCanvas");
             scratchCtx = scratchCanvasElem.getContext("2d", { willReadFrequently: true });
-            await resizeCanvasAndDrawTexture();
+            await resizeCanvasAndDrawHardScratchLayer();
             window.addEventListener("resize", handleResize);
             attachScratchEvents();
             autoRevealed = false;
             scratchCanvasElem.style.opacity = "1";
             scratchCanvasElem.style.display = "block";
             if (fadeTimeout) clearTimeout(fadeTimeout);
+            startScratchSound(); // Inicia el sonido ambiente de raspado
         }
 
-        function handleResize() { if (document.getElementById("scratchFullscreen").classList.contains("active")) resizeCanvasAndDrawTexture(); }
+        function handleResize() { 
+            if (document.getElementById("scratchFullscreen").classList.contains("active")) 
+                resizeCanvasAndDrawHardScratchLayer(); 
+        }
 
-        async function resizeCanvasAndDrawTexture() {
+        // Capa de raspado MUY densa y difícil: múltiples capas, puntos y patrones duros
+        async function resizeCanvasAndDrawHardScratchLayer() {
             if (!scratchCanvasElem || !scratchCtx) return;
             const container = document.querySelector(".scratch-inner");
             const rect = container.getBoundingClientRect();
@@ -727,17 +785,36 @@
             scratchCanvasElem.height = rect.height;
             scratchCanvasElem.style.width = `${rect.width}px`;
             scratchCanvasElem.style.height = `${rect.height}px`;
+            
+            // Fondo base metálico oscuro
             const grad = scratchCtx.createLinearGradient(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
-            grad.addColorStop(0, "#a47c44");
-            grad.addColorStop(0.5, "#dbb065");
-            grad.addColorStop(1, "#8c6239");
+            grad.addColorStop(0, "#4a3922");
+            grad.addColorStop(0.5, "#6e5436");
+            grad.addColorStop(1, "#3e2c1a");
             scratchCtx.fillStyle = grad;
             scratchCtx.fillRect(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
-            for (let i = 0; i < 2000; i++) {
-                scratchCtx.fillStyle = `rgba(220, 190, 120, ${Math.random() * 0.35})`;
+            
+            // Textura espesa tipo "scratch card" dificil: muchos puntos y líneas
+            for (let i = 0; i < 5000; i++) {
+                scratchCtx.fillStyle = `rgba(180, 150, 100, ${Math.random() * 0.5})`;
                 scratchCtx.beginPath();
-                scratchCtx.arc(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 4 + 1, 0, Math.PI * 2);
+                scratchCtx.arc(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 7 + 1, 0, Math.PI * 2);
                 scratchCtx.fill();
+            }
+            // Patrón de rejilla cruzada
+            scratchCtx.beginPath();
+            scratchCtx.strokeStyle = "rgba(100, 70, 40, 0.7)";
+            scratchCtx.lineWidth = 2.5;
+            for (let i = 0; i < 300; i++) {
+                scratchCtx.beginPath();
+                scratchCtx.moveTo(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height);
+                scratchCtx.lineTo(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height);
+                scratchCtx.stroke();
+            }
+            // capa adicional de "escamas" 
+            for (let s = 0; s < 1800; s++) {
+                scratchCtx.fillStyle = `rgba(210, 170, 100, ${Math.random() * 0.45})`;
+                scratchCtx.fillRect(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 12 + 2, Math.random() * 12 + 2);
             }
             scratchCtx.globalCompositeOperation = "source-over";
         }
@@ -757,19 +834,24 @@
                 y = Math.min(Math.max(0, y), scratchCanvasElem.height);
                 return { x, y };
             };
-            let lastSound = 0;
+            let lastScratchSound = 0;
             const scratchAction = (e) => {
                 if (!scratchCtx || autoRevealed) return;
                 e.preventDefault();
                 const now = Date.now();
-                if (now - lastSound > 70) { playScratchSound(); lastSound = now; }
+                if (now - lastScratchSound > 45) { 
+                    playScratchSoundEffect(); 
+                    lastScratchSound = now;
+                }
                 const { x, y } = getCoords(e);
                 scratchCtx.globalCompositeOperation = "destination-out";
+                // Brocha de raspado más pequeña para que sea más difícil y preciso
                 scratchCtx.beginPath();
-                scratchCtx.arc(x, y, 24, 0, Math.PI * 2);
+                scratchCtx.arc(x, y, 18, 0, Math.PI * 2);
                 scratchCtx.fill();
+                // añadir algo de ruido extra
                 scratchCtx.globalCompositeOperation = "source-over";
-                checkScratchProgress();
+                checkScratchProgressAndReveal();
             };
             const startDraw = (e) => { if (!autoRevealed) { isDrawing = true; scratchAction(e); } };
             const stopDraw = () => { isDrawing = false; };
@@ -783,12 +865,12 @@
             scratchCanvasElem._handlers = { startDraw, moveDraw, stopDraw };
         }
 
-        function checkScratchProgress() {
+        function checkScratchProgressAndReveal() {
             if (!scratchCtx || autoRevealed) return;
             const w = scratchCanvasElem.width, h = scratchCanvasElem.height;
             if (w === 0 || h === 0) return;
             let cleared = 0, total = 0;
-            const step = 32;
+            const step = 24; // evaluar por zonas
             for (let y = 0; y < h; y += step) {
                 for (let x = 0; x < w; x += step) {
                     const px = scratchCtx.getImageData(x, y, 1, 1).data;
@@ -797,11 +879,26 @@
                 }
             }
             const ratio = total > 0 ? cleared / total : 0;
+            // Requerimos 72% raspado para revelar completamente -> más difícil
             if (ratio >= 0.72 && !autoRevealed) {
                 autoRevealed = true;
-                scratchCanvasElem.style.transition = "opacity 0.8s ease-out";
+                // Revelar el número completamente: quitar blur y aumentar opacidad
+                const numDiv = document.getElementById("prizeNumberDisplay");
+                numDiv.style.transition = "filter 0.8s, opacity 0.8s";
+                numDiv.style.opacity = "1";
+                numDiv.style.filter = "blur(0px)";
+                // Desvanecer el canvas lentamente
+                scratchCanvasElem.style.transition = "opacity 1s ease-out";
                 scratchCanvasElem.style.opacity = "0";
-                fadeTimeout = setTimeout(() => { if (scratchCanvasElem) scratchCanvasElem.style.display = "none"; }, 800);
+                fadeTimeout = setTimeout(() => { if (scratchCanvasElem) scratchCanvasElem.style.display = "none"; }, 1000);
+                stopScratchSound();
+            } else if (ratio > 0.35) {
+                // A medida que se raspa, el número se va aclarando gradualmente (efecto buscado)
+                const numDiv = document.getElementById("prizeNumberDisplay");
+                const newOpacity = Math.min(0.35 + ratio * 0.65, 1);
+                const newBlur = Math.max(0, 8 - ratio * 11);
+                numDiv.style.opacity = newOpacity.toString();
+                numDiv.style.filter = `blur(${newBlur}px)`;
             }
         }
 
@@ -817,6 +914,7 @@
                 window.removeEventListener("touchend", h.stopDraw);
             }
             window.removeEventListener("resize", handleResize);
+            stopScratchSound();
         }
 
         async function closeScratchAndSave() {
@@ -827,16 +925,19 @@
                     lastFlipDate = getTodayDate();
                     lastFlippedIndex = currentScratchCardIndex;
                     saveToLocalStorage();
-                    showCustomMessage(`✨ Descubriste el número ${cardNumbers[currentScratchCardIndex]}`, false);
+                    showCustomMessage(`🎉 ¡Descubriste el número ${cardNumbers[currentScratchCardIndex]}!`, false);
                 } else {
-                    showCustomMessage("No quedan intentos, la carta no fue desbloqueada.", true);
+                    showCustomMessage("No quedan intentos, carta no desbloqueada.", true);
                 }
             }
             cleanupScratchEvents();
             document.getElementById("scratchFullscreen").classList.remove("active");
             document.getElementById("gameHeader").classList.remove("header-hidden");
             document.body.style.overflow = "";
-            if (scratchCanvasElem) scratchCanvasElem.style.opacity = "1";
+            if (scratchCanvasElem) {
+                scratchCanvasElem.style.opacity = "1";
+                scratchCanvasElem.style.display = "block";
+            }
             currentScratchCardIndex = null;
             renderBoard();
             updateAttemptsDisplay();
@@ -900,7 +1001,7 @@
         document.getElementById("closeScratchBtn").addEventListener("click", () => closeScratchAndSave());
 
         function init() {
-            initAudio();
+            ensureAudioEngine();
             loadFromLocalStorage();
             loadAttempts();
             if (!cardNumbers || cardNumbers.length !== TOTAL_CARDS) initializeFreshGame();
