@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Giro Mágico | Raspa Difícil + Sonido Real</title>
+    <title>OneInTen</title>
     <style>
         * {
             margin: 0;
@@ -348,7 +348,6 @@
             background: radial-gradient(circle at center, #1e1a15, #020100);
         }
 
-        /* Número semi-oculto inicialmente con opacidad baja y blur, más difícil de ver hasta raspar mucho */
         .prize-number-container {
             position: absolute;
             display: flex;
@@ -376,7 +375,6 @@
             transition: opacity 0.4s, filter 0.4s;
         }
 
-        /* Canvas de raspado más resistente, con textura granulada densa */
         .scratch-canvas {
             position: absolute;
             top: 0;
@@ -460,13 +458,13 @@
 <body>
 
     <header class="game-header" id="gameHeader">
-        <div class="title-area"><h1>✨ RASPA DIFÍCIL ✨</h1></div>
+        <div class="title-area"><h1>OneInTen</h1></div>
         <div class="stats">
             <div class="stat-badge"><span id="openedCount">0</span>/<span id="totalCards">7</span></div>
             <div class="stat-badge">✧ <span id="remainingCount">7</span> rest.</div>
-            <div class="attempts-badge" id="attemptsDisplay">🎴 Intentos: 3/3</div>
+            <div class="attempts-badge" id="attemptsDisplay">Intentos: 3/3</div>
         </div>
-        <div class="countdown" id="countdownTimer">⏳ próximo: --</div>
+        <div class="countdown" id="countdownTimer">próximo: --</div>
     </header>
 
     <div class="main-game-area">
@@ -478,7 +476,7 @@
     <div id="confirmModal" class="modal-confirm">
         <div class="modal-card">
             <div class="attempt-counter" id="modalAttemptCounter">Intentos restantes: 3</div>
-            <p>🔎 Elegí una carta<br>Raspá con esfuerzo para revelar el número oculto</p>
+            <p>🔎 Elegí una carta<br>Raspá para revelar el número oculto</p>
             <div class="modal-buttons">
                 <button id="confirmYesBtn" class="modal-btn confirm">✨ Raspar</button>
                 <button id="confirmNoBtn" class="modal-btn cancel">🔄 Otra carta</button>
@@ -488,7 +486,6 @@
 
     <div id="customToast" class="custom-toast"></div>
 
-    <!-- Pantalla de raspado mejorada: número borroso y difícil -->
     <div id="scratchFullscreen" class="scratch-fullscreen">
         <div class="close-full" id="closeScratchBtn">✕</div>
         <div class="scratch-inner">
@@ -496,7 +493,7 @@
                 <div id="prizeNumberDisplay" class="prize-number">??</div>
             </div>
             <canvas id="scratchCanvas" class="scratch-canvas"></canvas>
-            <div class="instruction-text">🔨 RASPADO PESADO - DESLIZA CON FUERZA PARA DESCUBRIR 🔨</div>
+            <div class="instruction-text">🎵 DESLIZA MIENTRAS MANTENGAS PRESIONADO - SONIDO ACTIVO 🎵</div>
         </div>
     </div>
 
@@ -523,90 +520,99 @@
         let autoRevealed = false;
         let fadeTimeout = null;
 
-        // --- SISTEMA DE AUDIO MEJORADO CON SONIDO REAL DE RASPAJO (generador de ruido blanco dinámico) ---
-        let audioContext = null;
-        let scratchGain = null;
-        let scratchOsc = null;
-        let isAudioActive = false;
+        // ========== NUEVO SISTEMA DE AUDIO CON ARCHIVO 0424.MP3 ==========
+        // SOLO SE REPRODUCE MIENTRAS EL USUARIO MANTIENE EL CLIC / DEDO PRESIONADO
+        let customAudioContext = null;
+        let customAudioBuffer = null;
+        let currentSource = null;
+        let isAudioPlaying = false;
+        let audioInitialized = false;
 
-        function initRealisticScratchAudio() {
+        // Precarga del audio 0424.MP3 (mismo directorio que el HTML)
+        async function initCustomScratchAudio() {
             try {
-                if (audioContext && audioContext.state !== 'closed') return;
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                audioContext = new AudioContextClass();
-                scratchGain = audioContext.createGain();
-                scratchGain.gain.value = 0;
-                scratchGain.connect(audioContext.destination);
+                if (!AudioContextClass) return false;
                 
-                // Crear un buffer de ruido blanco filtrado para sonido de raspado realista
-                const bufferSize = 4096;
-                const noiseNode = (() => {
-                    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                    const data = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) {
-                        data[i] = (Math.random() * 2 - 1) * 0.6;
-                    }
-                    const noise = audioContext.createBufferSource();
-                    noise.buffer = buffer;
-                    noise.loop = true;
-                    const biquad = audioContext.createBiquadFilter();
-                    biquad.type = "bandpass";
-                    biquad.frequency.value = 1800;
-                    biquad.Q.value = 1.2;
-                    noise.connect(biquad);
-                    biquad.connect(scratchGain);
-                    noise.start();
-                    return { noise, biquad };
-                })();
+                if (customAudioContext && customAudioContext.state !== 'closed') {
+                    // Si ya existe, solo reiniciamos el estado si es necesario
+                    return true;
+                }
                 
-                return {
-                    playStart: () => {
-                        if (!audioContext) return;
-                        if (audioContext.state === 'suspended') audioContext.resume();
-                        if (scratchGain) scratchGain.gain.value = 0.48;
-                        isAudioActive = true;
-                    },
-                    playScratch: () => {
-                        if (!audioContext || !scratchGain) return;
-                        if (audioContext.state === 'suspended') audioContext.resume();
-                        if (scratchGain.gain.value < 0.55) scratchGain.gain.value = 0.55;
-                        // Pequeño pico dinámico
-                        setTimeout(() => {
-                            if (scratchGain && isAudioActive) scratchGain.gain.value = 0.48;
-                        }, 55);
-                    },
-                    playStop: () => {
-                        if (scratchGain) {
-                            scratchGain.gain.value = 0;
-                            isAudioActive = false;
-                        }
-                    }
-                };
+                customAudioContext = new AudioContextClass();
+                
+                // Cargar el archivo 0424.MP3 desde la misma carpeta (sin ruta adicional)
+                const response = await fetch('0424.MP3');
+                if (!response.ok) {
+                    console.warn("No se pudo cargar 0424.MP3, asegúrate que el archivo existe junto al HTML.");
+                    return false;
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                customAudioBuffer = await customAudioContext.decodeAudioData(arrayBuffer);
+                return true;
             } catch(e) {
-                console.warn("Audio no soportado", e);
-                return { playStart:()=>{}, playScratch:()=>{}, playStop:()=>{} };
+                console.warn("Error al cargar audio personalizado:", e);
+                return false;
             }
         }
 
-        let scratchSoundEngine = null;
-        function ensureAudioEngine() {
-            if (!scratchSoundEngine) scratchSoundEngine = initRealisticScratchAudio();
-            return scratchSoundEngine;
+        // Reproducir sonido en loop mientras se raspa (solo si está presionado)
+        function startScratchCustomSound() {
+            if (!customAudioContext || !customAudioBuffer) return;
+            if (isAudioPlaying) return; // ya está sonando
+            
+            try {
+                // Asegurar que el contexto está activo
+                if (customAudioContext.state === 'suspended') {
+                    customAudioContext.resume();
+                }
+                
+                // Crear nueva fuente
+                currentSource = customAudioContext.createBufferSource();
+                currentSource.buffer = customAudioBuffer;
+                currentSource.loop = true;  // Repite el audio mientras se raspa
+                currentSource.loopStart = 0;
+                currentSource.loopEnd = customAudioBuffer.duration;
+                
+                const gainNode = customAudioContext.createGain();
+                gainNode.gain.value = 0.65; // Volumen moderado para raspado
+                
+                currentSource.connect(gainNode);
+                gainNode.connect(customAudioContext.destination);
+                currentSource.start();
+                isAudioPlaying = true;
+            } catch(e) {
+                console.warn("Error al reproducir audio:", e);
+            }
         }
 
-        function playScratchSoundEffect() {
-            const engine = ensureAudioEngine();
-            if (engine && engine.playScratch) engine.playScratch();
-        }
-        function startScratchSound() {
-            const engine = ensureAudioEngine();
-            if (engine && engine.playStart) engine.playStart();
-        }
-        function stopScratchSound() {
-            const engine = ensureAudioEngine();
-            if (engine && engine.playStop) engine.playStop();
+        function stopScratchCustomSound() {
+            if (!isAudioPlaying) return;
+            try {
+                if (currentSource) {
+                    currentSource.stop();
+                    currentSource.disconnect();
+                    currentSource = null;
+                }
+            } catch(e) { /* ignore */ }
+            isAudioPlaying = false;
         }
 
+        // Función para inicializar el audio al primer contacto del usuario (requisito de autoplay)
+        let audioUnlocked = false;
+        function unlockAudioOnFirstInteraction() {
+            if (audioUnlocked) return Promise.resolve(true);
+            if (customAudioContext && customAudioContext.state === 'suspended') {
+                return customAudioContext.resume().then(() => {
+                    audioUnlocked = true;
+                    return true;
+                }).catch(() => false);
+            }
+            audioUnlocked = true;
+            return Promise.resolve(true);
+        }
+
+        // ---------- Funciones auxiliares del juego ----------
         function showCustomMessage(msg, isError = false) {
             const toast = document.getElementById("customToast");
             toast.innerText = msg;
@@ -735,7 +741,7 @@
         function openConfirmModal(cardIdx) {
             if (isGameComplete()) { showCustomMessage("🏆 Ya completaste todas las cartas.", false); return; }
             if (isTodayFlipUsed()) { showCustomMessage("⛅ Ya usaste tu giro de hoy. Vuelve mañana.", true); return; }
-            if (!canMakeAttempt()) { showCustomMessage("❌ No te quedan más intentos para elegir cartas hoy. Mañana tendrás 3 nuevos.", true); return; }
+            if (!canMakeAttempt()) { showCustomMessage("❌ No te quedan más intentos para elegir cartas hoy.", true); return; }
             if (flippedState[cardIdx]) return;
             pendingCardIdx = cardIdx;
             updateAttemptsDisplay();
@@ -744,14 +750,13 @@
 
         function closeConfirmModal() { document.getElementById("confirmModal").classList.remove("active"); pendingCardIdx = null; }
 
-        // --- RASPAJS CON TEXTURA DENSA Y DIFICULTAD ---
+        // --- Funciones de raspado con audio personalizado (SOLO mientras se presiona) ---
         async function startScratchExperience(cardIdx) {
             if (flippedState[cardIdx] || isTodayFlipUsed() || !canMakeAttempt()) return;
             currentScratchCardIndex = cardIdx;
             const hiddenNumber = cardNumbers[cardIdx];
             const numberDisplay = document.getElementById("prizeNumberDisplay");
             numberDisplay.innerText = hiddenNumber;
-            // Número muy oculto: blur fuerte + opacidad baja
             numberDisplay.style.opacity = "0.35";
             numberDisplay.style.filter = "blur(8px)";
             
@@ -763,12 +768,11 @@
             scratchCtx = scratchCanvasElem.getContext("2d", { willReadFrequently: true });
             await resizeCanvasAndDrawHardScratchLayer();
             window.addEventListener("resize", handleResize);
-            attachScratchEvents();
+            attachScratchEventsWithCustomAudio();
             autoRevealed = false;
             scratchCanvasElem.style.opacity = "1";
             scratchCanvasElem.style.display = "block";
             if (fadeTimeout) clearTimeout(fadeTimeout);
-            startScratchSound(); // Inicia el sonido ambiente de raspado
         }
 
         function handleResize() { 
@@ -776,7 +780,6 @@
                 resizeCanvasAndDrawHardScratchLayer(); 
         }
 
-        // Capa de raspado MUY densa y difícil: múltiples capas, puntos y patrones duros
         async function resizeCanvasAndDrawHardScratchLayer() {
             if (!scratchCanvasElem || !scratchCtx) return;
             const container = document.querySelector(".scratch-inner");
@@ -786,7 +789,6 @@
             scratchCanvasElem.style.width = `${rect.width}px`;
             scratchCanvasElem.style.height = `${rect.height}px`;
             
-            // Fondo base metálico oscuro
             const grad = scratchCtx.createLinearGradient(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
             grad.addColorStop(0, "#4a3922");
             grad.addColorStop(0.5, "#6e5436");
@@ -794,14 +796,12 @@
             scratchCtx.fillStyle = grad;
             scratchCtx.fillRect(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
             
-            // Textura espesa tipo "scratch card" dificil: muchos puntos y líneas
             for (let i = 0; i < 5000; i++) {
                 scratchCtx.fillStyle = `rgba(180, 150, 100, ${Math.random() * 0.5})`;
                 scratchCtx.beginPath();
                 scratchCtx.arc(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 7 + 1, 0, Math.PI * 2);
                 scratchCtx.fill();
             }
-            // Patrón de rejilla cruzada
             scratchCtx.beginPath();
             scratchCtx.strokeStyle = "rgba(100, 70, 40, 0.7)";
             scratchCtx.lineWidth = 2.5;
@@ -811,7 +811,6 @@
                 scratchCtx.lineTo(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height);
                 scratchCtx.stroke();
             }
-            // capa adicional de "escamas" 
             for (let s = 0; s < 1800; s++) {
                 scratchCtx.fillStyle = `rgba(210, 170, 100, ${Math.random() * 0.45})`;
                 scratchCtx.fillRect(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 12 + 2, Math.random() * 12 + 2);
@@ -819,7 +818,8 @@
             scratchCtx.globalCompositeOperation = "source-over";
         }
 
-        function attachScratchEvents() {
+        // EVENTOS DE RASPA CON AUDIO DEL ARCHIVO 0424.MP3 (SOLO AL PRESIONAR Y ARRASTRAR)
+        function attachScratchEventsWithCustomAudio() {
             if (!scratchCanvasElem) return;
             const getCoords = (e) => {
                 const rect = scratchCanvasElem.getBoundingClientRect();
@@ -834,28 +834,42 @@
                 y = Math.min(Math.max(0, y), scratchCanvasElem.height);
                 return { x, y };
             };
-            let lastScratchSound = 0;
+            
             const scratchAction = (e) => {
                 if (!scratchCtx || autoRevealed) return;
                 e.preventDefault();
-                const now = Date.now();
-                if (now - lastScratchSound > 45) { 
-                    playScratchSoundEffect(); 
-                    lastScratchSound = now;
-                }
                 const { x, y } = getCoords(e);
                 scratchCtx.globalCompositeOperation = "destination-out";
-                // Brocha de raspado más pequeña para que sea más difícil y preciso
                 scratchCtx.beginPath();
                 scratchCtx.arc(x, y, 18, 0, Math.PI * 2);
                 scratchCtx.fill();
-                // añadir algo de ruido extra
                 scratchCtx.globalCompositeOperation = "source-over";
                 checkScratchProgressAndReveal();
             };
-            const startDraw = (e) => { if (!autoRevealed) { isDrawing = true; scratchAction(e); } };
-            const stopDraw = () => { isDrawing = false; };
+            
+            const startDraw = async (e) => {
+                if (!autoRevealed) {
+                    // Desbloquear audio y reproducir (SOLO AL MANTENER PRESIONADO)
+                    await unlockAudioOnFirstInteraction();
+                    if (customAudioContext && customAudioBuffer) {
+                        startScratchCustomSound();
+                    } else {
+                        // Intentar cargar el audio si aún no está listo
+                        await initCustomScratchAudio();
+                        if (customAudioBuffer) startScratchCustomSound();
+                    }
+                    isDrawing = true;
+                    scratchAction(e);
+                }
+            };
+            const stopDraw = () => {
+                if (isDrawing) {
+                    isDrawing = false;
+                    stopScratchCustomSound();  // DETIENE SONIDO AL SOLTAR EL CLIC/DEDO
+                }
+            };
             const moveDraw = (e) => { if (isDrawing && !autoRevealed) scratchAction(e); };
+            
             scratchCanvasElem.addEventListener("mousedown", startDraw);
             window.addEventListener("mousemove", moveDraw);
             window.addEventListener("mouseup", stopDraw);
@@ -870,7 +884,7 @@
             const w = scratchCanvasElem.width, h = scratchCanvasElem.height;
             if (w === 0 || h === 0) return;
             let cleared = 0, total = 0;
-            const step = 24; // evaluar por zonas
+            const step = 24;
             for (let y = 0; y < h; y += step) {
                 for (let x = 0; x < w; x += step) {
                     const px = scratchCtx.getImageData(x, y, 1, 1).data;
@@ -879,21 +893,17 @@
                 }
             }
             const ratio = total > 0 ? cleared / total : 0;
-            // Requerimos 72% raspado para revelar completamente -> más difícil
             if (ratio >= 0.72 && !autoRevealed) {
                 autoRevealed = true;
-                // Revelar el número completamente: quitar blur y aumentar opacidad
                 const numDiv = document.getElementById("prizeNumberDisplay");
                 numDiv.style.transition = "filter 0.8s, opacity 0.8s";
                 numDiv.style.opacity = "1";
                 numDiv.style.filter = "blur(0px)";
-                // Desvanecer el canvas lentamente
                 scratchCanvasElem.style.transition = "opacity 1s ease-out";
                 scratchCanvasElem.style.opacity = "0";
                 fadeTimeout = setTimeout(() => { if (scratchCanvasElem) scratchCanvasElem.style.display = "none"; }, 1000);
-                stopScratchSound();
+                stopScratchCustomSound();  // Detener sonido si se completa el raspado
             } else if (ratio > 0.35) {
-                // A medida que se raspa, el número se va aclarando gradualmente (efecto buscado)
                 const numDiv = document.getElementById("prizeNumberDisplay");
                 const newOpacity = Math.min(0.35 + ratio * 0.65, 1);
                 const newBlur = Math.max(0, 8 - ratio * 11);
@@ -914,7 +924,7 @@
                 window.removeEventListener("touchend", h.stopDraw);
             }
             window.removeEventListener("resize", handleResize);
-            stopScratchSound();
+            stopScratchCustomSound(); // Asegurar que el sonido se detiene
         }
 
         async function closeScratchAndSave() {
@@ -1000,8 +1010,9 @@
         document.getElementById("confirmNoBtn").addEventListener("click", onCancelChoice);
         document.getElementById("closeScratchBtn").addEventListener("click", () => closeScratchAndSave());
 
-        function init() {
-            ensureAudioEngine();
+        async function init() {
+            // Precargar el audio 0424.MP3 (sin reproducir aún)
+            await initCustomScratchAudio();
             loadFromLocalStorage();
             loadAttempts();
             if (!cardNumbers || cardNumbers.length !== TOTAL_CARDS) initializeFreshGame();
