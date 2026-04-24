@@ -2,24 +2,31 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Giro Mágico - Cartas Misteriosas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Giro Mágico | Línea Centrada Sin Scroll</title>
     <style>
         * {
-            box-sizing: border-box;
-            user-select: none;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            user-select: none;
         }
 
-        body {
-            min-height: 100vh;
-            font-family: 'Segoe UI', 'Poppins', 'Roboto', system-ui, sans-serif;
-            overflow-x: hidden;
-            position: relative;
+        :root {
+            --gold: #d4af37;
+            --gold-light: #f3e0a4;
+            --dark-bg: #0a0a0a;
         }
 
-        /* IMAGEN DE FONDO ANIMADA */
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Cormorant Garamond', 'Segoe UI', 'Georgia', serif;
+            background-color: #0c0704;
+            overflow: hidden;
+            position: fixed;
+        }
+
         body::before {
             content: "";
             position: fixed;
@@ -27,15 +34,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('1.jfif') center/cover no-repeat;
-            background-size: cover;
-            background-attachment: fixed;
-            opacity: 0.9;
+            background: url('1.jfif') center/cover no-repeat fixed;
+            filter: brightness(0.55) contrast(1.1);
             z-index: -2;
             pointer-events: none;
         }
 
-        /* Gradiente de superposición para mejorar legibilidad */
         body::after {
             content: "";
             position: fixed;
@@ -43,676 +47,869 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6));
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.6), rgba(0,0,0,0.85));
             z-index: -1;
             pointer-events: none;
         }
 
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100%;
-            padding: 1rem 1.5rem 1.5rem 1.5rem;
-            overflow: hidden;
-        }
-
-        /* PANEL DE ESTADOS */
-        .stats-panel {
+        /* Header mejorado - más compacto y sin ocupar mucho espacio */
+        .game-header {
+            padding: 0.8rem 2rem;
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(12px);
-            border-radius: 3rem;
-            padding: 0.7rem 1.8rem;
-            margin-bottom: 1.5rem;
-            color: #fff3e0;
-            gap: 14px;
-            box-shadow: 0 12px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,215,130,0.5);
-            flex-shrink: 0;
-            z-index: 10;
-        }
-
-        .info-card {
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 2rem;
-            padding: 0.4rem 1.2rem;
-            font-weight: bold;
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-            backdrop-filter: blur(4px);
-            border: 1px solid #ffcf7a;
-        }
-
-        .info-card span:first-child {
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-weight: 500;
-            color: #ffdd99;
-        }
-
-        .info-card .value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #ffdfaa;
-            text-shadow: 0 2px 5px #b45f1b;
-            line-height: 1;
-        }
-
-        .message-area {
-            background: rgba(0, 0, 0, 0.75);
-            border-radius: 3rem;
-            padding: 0.7rem 1.5rem;
-            font-weight: bold;
-            font-size: 0.95rem;
-            flex: 2;
-            text-align: center;
-            letter-spacing: 0.3px;
-            border-left: 5px solid #ffb347;
-            backdrop-filter: blur(8px);
-            font-weight: 600;
-            color: #ffefcd;
-        }
-
-        .countdown-box {
             background: rgba(0, 0, 0, 0.7);
-            padding: 0.5rem 1.2rem;
-            border-radius: 2.5rem;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 1.05rem;
-            color: #ffdd99;
-            backdrop-filter: blur(5px);
-            border: 1px solid #f3b15a;
-            letter-spacing: 1px;
-        }
-
-        /* GRID DE CARTAS */
-        .cards-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 1.5rem;
-            padding: 0.5rem;
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.5);
+            z-index: 20;
+            transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.3s;
             position: relative;
         }
 
-        /* DISEÑO DE CARTAS CON IMAGEN */
-        .card {
-            width: 100%;
-            max-width: 135px;
-            min-width: 100px;
-            flex: 1 1 auto;
-            aspect-ratio: 3 / 4;
-            background: url('cttro_ 🛵.jfif') center/cover no-repeat;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 2rem;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            box-shadow: 0 16px 20px -8px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255,255,240,0.3);
-            border: 2px solid rgba(255, 215, 120, 0.9);
-            transform: translateY(-3px);
-            position: relative;
-        }
-
-        /* Efecto de brillo en las cartas */
-        .card::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: 20px;
-            background: radial-gradient(circle at 30% 25%, rgba(255,245,200,0.2), transparent);
+        .header-hidden {
+            transform: translateY(-100%);
+            opacity: 0;
             pointer-events: none;
         }
 
-        .card:active {
-            transform: translateY(4px);
-            box-shadow: 0 8px 12px -4px black;
+        .title-area h1 {
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: var(--gold-light);
+            text-shadow: 0 2px 5px #00000055;
         }
 
-        /* ANIMACIÓN DE BARAJADO */
-        .card.shuffle-animation {
-            animation: whirlwindShuffle 0.7s cubic-bezier(0.2, 0.9, 0.6, 1.2) forwards;
+        .stats {
+            display: flex;
+            gap: 1.2rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.3rem 1.2rem;
+            border-radius: 3rem;
         }
 
-        @keyframes whirlwindShuffle {
-            0% {
-                transform: rotate(0deg) translateY(0px) scale(0.7);
-                filter: blur(6px);
-                opacity: 0.3;
-            }
-            30% {
-                transform: rotate(110deg) translateX(-35px) translateY(-30px) scale(0.85);
-                filter: blur(3px);
-                opacity: 0.7;
-            }
-            70% {
-                transform: rotate(250deg) translateX(25px) translateY(-20px) scale(0.95);
-                filter: blur(1px);
-                opacity: 0.9;
-            }
-            100% {
-                transform: rotate(360deg) translateX(0) translateY(0) scale(1);
-                filter: blur(0);
-                opacity: 1;
-            }
+        .stat-badge {
+            font-family: monospace;
+            font-size: 0.95rem;
+            color: #ffecb3;
         }
 
-        /* CARTA VOLTEADA (abierta) - mantiene la imagen pero con overlay */
-        .card.flipped {
-            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4);
-            transform: translateY(0px);
-            cursor: default;
+        .stat-badge span {
+            font-weight: bold;
+            font-size: 1.3rem;
+            color: var(--gold);
+        }
+
+        .attempts-badge {
+            background: #1f1a0e;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-weight: bold;
+            color: #f5cd7a;
+            border-left: 3px solid var(--gold);
+        }
+
+        .countdown {
+            font-family: 'Courier New', monospace;
+            background: #00000066;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            color: #ead7ae;
+        }
+
+        /* NUEVO: contenedor principal que centra las cartas verticalmente justo donde queremos */
+        /* Usamos flex para ocupar toda la altura y forzar el centrado vertical con espacio */
+        .main-game-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;  /* Centra verticalmente el contenido sobrante */
+            align-items: center;
+            width: 100vw;
+            height: calc(100vh - 80px); /* Resta altura aproximada del header para bajar las cartas */
+            margin-top: 0;
             position: relative;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        /* Contenedor horizontal SIN scroll (porque usamos flex-wrap: nowrap y centrado) */
+        /* Eliminamos scroll horizontal y forzamos que todo quepa en una sola línea centrada */
+        .cards-horizontal-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            overflow-x: visible;  /* Sin scroll horizontal */
+            padding: 0 20px;
+        }
+
+        .cards-grid {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: nowrap;    /* Fuerza línea única horizontal */
+            width: auto;
+            max-width: 100%;
+            padding: 0.5rem;
+        }
+
+        /* Diseño de carta basado en tu estilo - dimensiones elegantes */
+        .card {
+            width: 190px;
+            height: 260px;
+            background: url('cttro_ 🛵.jfif') center/cover no-repeat;
+            background-color: #222; 
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+            border: 1px solid rgba(212, 175, 55, 0.6);
+            box-shadow: 0 20px 28px -12px black;
+            position: relative;
+            flex-shrink: 0;       /* Evita que se encojan */
+        }
+
+        .card:hover:not(.flipped) {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--gold);
+            box-shadow: 0 28px 35px -10px rgba(0,0,0,0.7);
+        }
+
+        .card.flipped {
+            cursor: default;
+            border-color: #b48b3a;
+            opacity: 0.85;
         }
 
         .card.flipped::after {
-            content: "";
+            content: "✓";
             position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 20px;
-            pointer-events: none;
-        }
-
-        .card.flipped.shuffle-animation {
-            animation: none !important;
-            transform: translateY(0px) !important;
-        }
-
-        /* Símbolo "?" sobre la imagen (cartas cerradas) */
-        .card:not(.flipped)::after {
-            content: "?";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2.8rem;
-            font-weight: bold;
-            color: #FFD966;
-            text-shadow: 3px 3px 0 #7a3f1a;
-            background: rgba(0, 0, 0, 0.5);
-            width: 65px;
-            height: 65px;
+            bottom: 12px;
+            right: 16px;
+            background: var(--gold);
+            color: black;
+            width: 32px;
+            height: 32px;
+            border-radius: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .card .card-number-display {
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(12px);
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--gold-light);
+            font-family: monospace;
+        }
+
+        .card:not(.flipped) .card-number-display {
+            display: none;
+        }
+
+        .card:not(.flipped)::before {
+            content: "?";
+            position: absolute;
+            font-size: 3.2rem;
+            background: rgba(0,0,0,0.55);
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 60px;
+            backdrop-filter: blur(5px);
+            color: #ffdd99;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            font-weight: bold;
+        }
+
+        /* Scroll personalizado - solo por si acaso en pantallas muy pequeñas, pero invisual */
+        .main-game-area::-webkit-scrollbar {
+            height: 0px;
+            background: transparent;
+        }
+
+        /* Modal personalizado */
+        .custom-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(20px);
+            color: #ffecb3;
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 1rem;
+            z-index: 10050;
+            transition: all 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+            border-left: 4px solid var(--gold);
+            white-space: nowrap;
+        }
+        .custom-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .modal-confirm {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(16px);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.25s ease;
+        }
+
+        .modal-confirm.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: linear-gradient(145deg, #201a14, #110d09);
+            border-radius: 56px;
+            padding: 2rem;
+            max-width: 380px;
+            width: 85%;
+            text-align: center;
+            border: 1px solid var(--gold);
+        }
+
+        .modal-card p {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            color: #fbeccd;
+        }
+
+        .attempt-counter {
+            font-size: 0.85rem;
+            background: #00000077;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            margin-bottom: 1rem;
+            color: #eac77b;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+        .modal-btn.confirm { background: var(--gold); color: #1f1309; }
+        .modal-btn.cancel { background: #2c241e; color: #ffe3ae; border: 1px solid #866f42; }
+
+        /* Pantalla de raspado full */
+        .scratch-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #030201;
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+        }
+
+        .scratch-fullscreen.active { display: flex; }
+
+        .scratch-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1e1a15, #020100);
+        }
+
+        .prize-number {
+            font-size: clamp(3.5rem, 20vw, 18rem);
+            font-weight: 800;
+            font-family: monospace;
+            color: #f7de9c;
+            text-shadow: 0 0 30px #ffb347;
+            background: rgba(0,0,0,0.3);
+            padding: 0.2em 0.7em;
+            border-radius: 80px;
+            backdrop-filter: blur(5px);
+        }
+
+        .scratch-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: url('https://cur.cursors-4u.net/others/oth-7/oth644.cur'), grabbing;
+            transition: opacity 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 10;
+        }
+
+        .close-full {
+            position: fixed;
+            top: 25px;
+            right: 28px;
+            width: 48px;
+            height: 48px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
             border-radius: 50%;
-            backdrop-filter: blur(3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ffdead;
+            border: 1px solid #c6a152;
+            cursor: pointer;
+            z-index: 10005;
+            transition: 0.2s;
+        }
+        .close-full:hover {
+            background: #d99e42;
+            color: #1c130b;
+        }
+
+        .instruction-text {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(240, 215, 150, 0.7);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
             font-family: monospace;
             pointer-events: none;
         }
 
-        .card:not(.flipped) span {
-            display: none;
+        /* Responsive: para pantallas medianas reducimos tamaño de cartas pero siguen centradas */
+        @media (max-width: 1300px) {
+            .cards-grid { gap: 1.5rem; }
+            .card { width: 170px; height: 235px; }
         }
 
-        .card.flipped span {
-            display: block;
-            animation: flipContentPop 0.25s ease-out;
-            font-weight: 800;
-            z-index: 2;
-            position: relative;
-            font-size: 2.8rem;
-            color: white;
-            text-shadow: 2px 2px 8px black;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-radius: 50px;
-            letter-spacing: 2px;
+        @media (max-width: 1000px) {
+            .cards-grid { gap: 1.2rem; }
+            .card { width: 150px; height: 210px; }
+            .card:not(.flipped)::before { font-size: 2.6rem; width: 55px; height: 55px; }
         }
 
-        @keyframes flipContentPop {
-            0% { transform: scale(0.1) rotate(-12deg); opacity: 0; }
-            80% { transform: scale(1.2); }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        /* Responsive */
-        @media (max-width: 680px) {
+        @media (max-width: 800px) {
             .cards-grid { gap: 1rem; }
-            .card { max-width: 105px; min-width: 80px; }
-            .card:not(.flipped)::after { font-size: 2rem; width: 50px; height: 50px; }
-            .card.flipped span { font-size: 2rem; padding: 5px 12px; }
-            .stats-panel { flex-direction: column; align-items: stretch; padding: 0.8rem 1.2rem; }
-            .info-card .value { font-size: 1.4rem; }
+            .card { width: 135px; height: 190px; }
+            .game-header { padding: 0.5rem 1rem; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px; }
+            .title-area h1 { font-size: 1rem; }
+            .stats { gap: 0.8rem; padding: 0.2rem 0.8rem; }
+            .stat-badge { font-size: 0.75rem; }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 650px) {
+            .cards-grid { gap: 0.9rem; }
+            .card { width: 115px; height: 165px; border-radius: 20px; }
+            .card .card-number-display { font-size: 1.5rem; padding: 0.3rem 0.8rem; }
+            .card:not(.flipped)::before { font-size: 2rem; width: 45px; height: 45px; }
+        }
+
+        @media (max-width: 550px) {
             .cards-grid { gap: 0.7rem; }
-            .card { max-width: 85px; min-width: 70px; }
-            .card.flipped span { font-size: 1.7rem; }
-            .card:not(.flipped)::after { font-size: 1.6rem; width: 40px; height: 40px; }
+            .card { width: 100px; height: 145px; border-radius: 18px; }
+            .main-game-area { height: calc(100vh - 85px); }
         }
 
-        /* Partículas mágicas */
-        .shuffle-particle {
-            position: fixed;
-            pointer-events: none;
-            z-index: 999;
-            background: radial-gradient(circle, #ffd58c, #ffaa44);
-            border-radius: 50%;
-            animation: magicSpark 0.7s ease-out forwards;
-        }
-
-        @keyframes magicSpark {
-            0% { transform: scale(0.2); opacity: 0.9; }
-            100% { transform: scale(2.8); opacity: 0; }
-        }
-
-        .cards-grid::-webkit-scrollbar {
-            width: 6px;
-        }
-        .cards-grid::-webkit-scrollbar-track {
-            background: #2e241f60;
-            border-radius: 10px;
-        }
-        .cards-grid::-webkit-scrollbar-thumb {
-            background: #e5a452;
-            border-radius: 10px;
+        @keyframes elegantShuffle {
+            0% { transform: rotate(0deg) translateY(0px); }
+            30% { transform: rotate(2deg) translateX(-8px) translateY(-5px); }
+            70% { transform: rotate(-1deg) translateX(8px) translateY(-3px); }
+            100% { transform: rotate(0deg) translateX(0px) translateY(0px); }
         }
     </style>
 </head>
 <body>
-<div class="game-container">
-    <div class="stats-panel">
-        <div class="info-card">
-            <span> Abiertas </span>
-            <span class="value" id="openedCount">0</span>
-            <span>/ 7</span>
+
+    <header class="game-header" id="gameHeader">
+        <div class="title-area"><h1>✨ RASPA MÁGICA ✨</h1></div>
+        <div class="stats">
+            <div class="stat-badge"><span id="openedCount">0</span>/<span id="totalCards">7</span></div>
+            <div class="stat-badge">✧ <span id="remainingCount">7</span> rest.</div>
+            <div class="attempts-badge" id="attemptsDisplay">🎴 Intentos: 3/3</div>
         </div>
-        <div class="info-card">
-            <span> Restantes</span>
-            <span class="value" id="remainingCount">7</span>
-        </div>
-        <div class="message-area" id="statusMessage">
-             Te quedan 7 cartas restantes
-        </div>
-        <div class="countdown-box" id="countdownTimer">
-            próximo giro: --
+        <div class="countdown" id="countdownTimer">⏳ próximo: --</div>
+    </header>
+
+    <!-- NUEVA ÁREA PRINCIPAL: centra las cartas abajo sin scroll obligatorio -->
+    <div class="main-game-area">
+        <div class="cards-horizontal-wrapper">
+            <div class="cards-grid" id="cardsGrid"></div>
         </div>
     </div>
 
-    <div class="cards-grid" id="cardsGrid"></div>
-</div>
+    <!-- Modal -->
+    <div id="confirmModal" class="modal-confirm">
+        <div class="modal-card">
+            <div class="attempt-counter" id="modalAttemptCounter">Intentos restantes: 3</div>
+            <p>¿Elegir esta carta?<br>Raspa para descubrir el número.</p>
+            <div class="modal-buttons">
+                <button id="confirmYesBtn" class="modal-btn confirm">✨ Sí, elegir</button>
+                <button id="confirmNoBtn" class="modal-btn cancel">🔄 Otra carta</button>
+            </div>
+        </div>
+    </div>
 
-<script>
-    // CONFIGURACIÓN: 7 cartas con números del 1 al 10 (sin repetir)
-    const TOTAL_CARDS = 7;
-    const NUMBER_POOL = 10;
-    const STORAGE_NUMBERS = "magic7_cards_numbers";
-    const STORAGE_FLIPPED = "magic7_cards_flipped";
-    const STORAGE_LAST_DATE = "magic7_cards_lastDate";
-    const STORAGE_LAST_CARD_IDX = "magic7_cards_lastIdx";
+    <div id="customToast" class="custom-toast"></div>
 
-    let cardNumbers = [];
-    let flippedState = [];
-    let lastFlipDate = null;
-    let lastFlippedIndex = -1;
-    let shuffleInterval = null;
+    <!-- Fullscratch -->
+    <div id="scratchFullscreen" class="scratch-fullscreen">
+        <div class="close-full" id="closeScratchBtn">✕</div>
+        <div class="scratch-inner">
+            <div id="prizeNumberDisplay" class="prize-number">??</div>
+            <canvas id="scratchCanvas" class="scratch-canvas"></canvas>
+            <div class="instruction-text">← DESLIZA LENTAMENTE →</div>
+        </div>
+    </div>
 
-    const gridContainer = document.getElementById("cardsGrid");
-    const openedCountSpan = document.getElementById("openedCount");
-    const remainingCountSpan = document.getElementById("remainingCount");
-    const statusMsgDiv = document.getElementById("statusMessage");
-    const countdownSpan = document.getElementById("countdownTimer");
+    <script>
+        // ---------- CONFIGURACIÓN JUEGO ----------
+        const TOTAL_CARDS = 7;
+        const MAX_NUM = 10;
+        const STORAGE_NUMBERS = "magic7_cards_numbers";
+        const STORAGE_FLIPPED = "magic7_cards_flipped";
+        const STORAGE_LAST_DATE = "magic7_cards_lastDate";
+        const STORAGE_LAST_CARD_IDX = "magic7_cards_lastIdx";
+        const STORAGE_ATTEMPTS = "magic7_attempts_today";
 
-    function getTodayDate() {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-    }
+        let cardNumbers = [];
+        let flippedState = [];
+        let lastFlipDate = null;
+        let lastFlippedIndex = -1;
+        let remainingAttempts = 3;
 
-    function generateUniqueRandomNumbers(count, maxVal) {
-        const available = Array.from({ length: maxVal }, (_, i) => i + 1);
-        for (let i = available.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [available[i], available[j]] = [available[j], available[i]];
-        }
-        return available.slice(0, count);
-    }
+        let currentScratchCardIndex = null;
+        let scratchCtx = null;
+        let scratchCanvasElem = null;
+        let isDrawing = false;
+        let autoRevealed = false;
+        let fadeTimeout = null;
 
-    function saveToLocalStorage() {
-        localStorage.setItem(STORAGE_NUMBERS, JSON.stringify(cardNumbers));
-        localStorage.setItem(STORAGE_FLIPPED, JSON.stringify(flippedState));
-        if (lastFlipDate !== null) localStorage.setItem(STORAGE_LAST_DATE, lastFlipDate);
-        else localStorage.removeItem(STORAGE_LAST_DATE);
-        if (lastFlippedIndex !== -1) localStorage.setItem(STORAGE_LAST_CARD_IDX, JSON.stringify(lastFlippedIndex));
-        else localStorage.removeItem(STORAGE_LAST_CARD_IDX);
-    }
-
-    function initializeFreshGame() {
-        cardNumbers = generateUniqueRandomNumbers(TOTAL_CARDS, NUMBER_POOL);
-        flippedState = new Array(TOTAL_CARDS).fill(false);
-        lastFlipDate = null;
-        lastFlippedIndex = -1;
-        saveToLocalStorage();
-    }
-
-    function loadFromLocalStorage() {
-        const storedNumbers = localStorage.getItem(STORAGE_NUMBERS);
-        const storedFlipped = localStorage.getItem(STORAGE_FLIPPED);
-        const storedDate = localStorage.getItem(STORAGE_LAST_DATE);
-        const storedLastIdx = localStorage.getItem(STORAGE_LAST_CARD_IDX);
-
-        if (storedNumbers && storedFlipped) {
+        // Audio raspado
+        let scratchAudio = null;
+        function initAudio() {
             try {
-                cardNumbers = JSON.parse(storedNumbers);
-                flippedState = JSON.parse(storedFlipped);
-                if (!Array.isArray(cardNumbers) || cardNumbers.length !== TOTAL_CARDS ||
-                    !Array.isArray(flippedState) || flippedState.length !== TOTAL_CARDS) {
-                    throw new Error("Corrupto");
-                }
-                const uniqueSet = new Set(cardNumbers);
-                if (uniqueSet.size !== TOTAL_CARDS || cardNumbers.some(n => n < 1 || n > NUMBER_POOL)) {
-                    throw new Error("Rango inválido");
-                }
-            } catch(e) {
-                initializeFreshGame();
-                return;
-            }
-            lastFlipDate = storedDate || null;
-            lastFlippedIndex = (storedLastIdx !== null && storedLastIdx !== undefined) ? JSON.parse(storedLastIdx) : -1;
-        } else {
-            initializeFreshGame();
-        }
-    }
-
-    function isGameComplete() {
-        return flippedState.every(flipped => flipped === true);
-    }
-
-    function isTodayFlipUsed() {
-        if (!lastFlipDate) return false;
-        return lastFlipDate === getTodayDate();
-    }
-
-    function createShuffleParticles() {
-        const cards = document.querySelectorAll('.card:not(.flipped)');
-        if (cards.length === 0) return;
-        const particleCount = Math.min(16, cards.length * 3);
-        for (let i = 0; i < particleCount; i++) {
-            const randomCard = cards[Math.floor(Math.random() * cards.length)];
-            if (!randomCard) continue;
-            const rect = randomCard.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2 + (Math.random() - 0.5) * 35;
-            const centerY = rect.top + rect.height / 2 + (Math.random() - 0.5) * 30;
-            const particle = document.createElement('div');
-            particle.classList.add('shuffle-particle');
-            particle.style.left = `${centerX - 6}px`;
-            particle.style.top = `${centerY - 6}px`;
-            particle.style.width = `${6 + Math.random() * 12}px`;
-            particle.style.height = particle.style.width;
-            particle.style.background = `radial-gradient(circle, #ffdd99, #ffb347, #ff8c42)`;
-            document.body.appendChild(particle);
-            setTimeout(() => particle.remove(), 600);
-        }
-    }
-
-    function triggerShuffleAnimation() {
-        const cards = document.querySelectorAll('.card');
-        if (!cards.length) return;
-        cards.forEach(card => {
-            if (!card.classList.contains('flipped')) {
-                card.classList.remove('shuffle-animation');
-                void card.offsetWidth;
-                card.classList.add('shuffle-animation');
-            }
-        });
-        createShuffleParticles();
-        setTimeout(() => {
-            cards.forEach(card => {
-                if (!card.classList.contains('flipped')) card.classList.remove('shuffle-animation');
-            });
-        }, 700);
-    }
-
-    function startPeriodicShuffle() {
-        if (shuffleInterval) clearInterval(shuffleInterval);
-        shuffleInterval = setInterval(() => {
-            if (!isGameComplete()) {
-                triggerShuffleAnimation();
-            }
-        }, 10000);
-    }
-
-    function createCardCelebration(cardIdx) {
-        const cardsElements = document.querySelectorAll('.card');
-        if (!cardsElements[cardIdx]) return;
-        const rect = cardsElements[cardIdx].getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        for (let i = 0; i < 28; i++) {
-            const particle = document.createElement('div');
-            particle.classList.add('shuffle-particle');
-            const angle = Math.random() * 2 * Math.PI;
-            const rad = 30 + Math.random() * 70;
-            const tx = Math.cos(angle) * rad;
-            const ty = Math.sin(angle) * rad;
-            particle.style.left = `${centerX - 5 + tx * 0.7}px`;
-            particle.style.top = `${centerY - 5 + ty * 0.6}px`;
-            particle.style.width = `${5 + Math.random() * 10}px`;
-            particle.style.height = particle.style.width;
-            particle.style.background = `radial-gradient(circle, #ffd966, #ffaa44, #f5a623)`;
-            document.body.appendChild(particle);
-            setTimeout(() => particle.remove(), 550);
-        }
-    }
-
-    function triggerFireworksEffect() {
-        for (let i = 0; i < 90; i++) {
-            const particle = document.createElement('div');
-            particle.classList.add('shuffle-particle');
-            particle.style.position = 'fixed';
-            particle.style.left = `${Math.random() * window.innerWidth}px`;
-            particle.style.top = `${Math.random() * window.innerHeight}px`;
-            particle.style.background = `radial-gradient(circle, #ffcc55, #ffaa33, #ff9933)`;
-            particle.style.width = `${8 + Math.random() * 14}px`;
-            particle.style.height = particle.style.width;
-            particle.style.animation = `magicSpark 0.9s ease-out forwards`;
-            document.body.appendChild(particle);
-            setTimeout(() => particle.remove(), 900);
-        }
-    }
-
-    function flipCard(cardIndex) {
-        const today = getTodayDate();
-
-        if (isGameComplete()) {
-            statusMsgDiv.innerHTML = "🏆 ¡TESORO COMPLETO! Todas las cartas abiertas 🏆";
-            return false;
-        }
-
-        if (flippedState[cardIndex]) {
-            statusMsgDiv.innerHTML = `🔮 Carta #${cardIndex+1} ya está abierta (Número ${cardNumbers[cardIndex]}).`;
-            return false;
-        }
-
-        if (isTodayFlipUsed()) {
-            const lastNum = (lastFlippedIndex !== -1 && flippedState[lastFlippedIndex]) ? cardNumbers[lastFlippedIndex] : "?";
-            statusMsgDiv.innerHTML = `⛔ Hoy ya usaste tu giro mágico. Vuelve mañana. (Última: N° ${lastNum})`;
-            return false;
-        }
-
-        flippedState[cardIndex] = true;
-        lastFlipDate = today;
-        lastFlippedIndex = cardIndex;
-        const revealedNumber = cardNumbers[cardIndex];
-        saveToLocalStorage();
-
-        createCardCelebration(cardIndex);
-        statusMsgDiv.innerHTML = `🎉 ¡Giro exitoso! Número: ${revealedNumber} 🎉 Vuelve mañana.`;
-        renderBoard();
-        updateStatsAndMessage();
-
-        if (isGameComplete()) {
-            statusMsgDiv.innerHTML = "✨ ¡INCREÍBLE! Abriste las 7 cartas legendarias. ✨";
-            triggerFireworksEffect();
-        }
-        return true;
-    }
-
-    function renderBoard() {
-        if (!gridContainer) return;
-        const totalFlipped = flippedState.filter(v => v === true).length;
-        openedCountSpan.innerText = totalFlipped;
-        remainingCountSpan.innerText = TOTAL_CARDS - totalFlipped;
-
-        if (gridContainer.children.length === TOTAL_CARDS) {
-            for (let i = 0; i < TOTAL_CARDS; i++) {
-                const oldCard = gridContainer.children[i];
-                const newCard = document.createElement("div");
-                newCard.className = "card";
-                if (flippedState[i]) {
-                    newCard.classList.add("flipped");
-                    const numberSpan = document.createElement("span");
-                    numberSpan.innerText = cardNumbers[i];
-                    newCard.appendChild(numberSpan);
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    const actx = new AudioContextClass();
+                    const buffer = actx.createBuffer(1, 6000, 22050);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < data.length; i++) {
+                        data[i] = (Math.random() - 0.5) * 0.28 * Math.exp(-i / 1400);
+                    }
+                    scratchAudio = {
+                        play: () => {
+                            const src = actx.createBufferSource();
+                            src.buffer = buffer;
+                            const gain = actx.createGain();
+                            src.connect(gain);
+                            gain.connect(actx.destination);
+                            gain.gain.value = 0.2;
+                            src.start();
+                        }
+                    };
                 } else {
-                    const hiddenSpan = document.createElement("span");
-                    hiddenSpan.style.display = "none";
-                    hiddenSpan.innerText = "?";
-                    newCard.appendChild(hiddenSpan);
+                    scratchAudio = { play: () => {} };
                 }
-                newCard.addEventListener("click", (function(idx) {
-                    return function() { flipCard(idx); };
-                })(i));
-                gridContainer.replaceChild(newCard, oldCard);
+            } catch(e) { scratchAudio = { play: () => {} }; }
+        }
+        function playScratchSound() { if (scratchAudio && scratchAudio.play) scratchAudio.play(); }
+
+        function showCustomMessage(msg, isError = false) {
+            const toast = document.getElementById("customToast");
+            toast.innerText = msg;
+            toast.style.background = isError ? "rgba(80, 20, 10, 0.95)" : "rgba(0,0,0,0.92)";
+            toast.style.borderLeftColor = isError ? "#ff8c5a" : "#d4af37";
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 2700);
+        }
+
+        function getTodayDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function generateUniqueRandomNumbers(count, maxVal) {
+            const available = Array.from({ length: maxVal }, (_, i) => i + 1);
+            for (let i = available.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [available[i], available[j]] = [available[j], available[i]];
             }
-        } else {
+            return available.slice(0, count);
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem(STORAGE_NUMBERS, JSON.stringify(cardNumbers));
+            localStorage.setItem(STORAGE_FLIPPED, JSON.stringify(flippedState));
+            if (lastFlipDate) localStorage.setItem(STORAGE_LAST_DATE, lastFlipDate);
+            else localStorage.removeItem(STORAGE_LAST_DATE);
+            if (lastFlippedIndex !== -1) localStorage.setItem(STORAGE_LAST_CARD_IDX, JSON.stringify(lastFlippedIndex));
+            else localStorage.removeItem(STORAGE_LAST_CARD_IDX);
+            localStorage.setItem(STORAGE_ATTEMPTS, JSON.stringify({ attempts: remainingAttempts, date: getTodayDate() }));
+        }
+
+        function loadAttempts() {
+            const stored = localStorage.getItem(STORAGE_ATTEMPTS);
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    if (data.date === getTodayDate()) remainingAttempts = data.attempts;
+                    else remainingAttempts = 3;
+                } catch(e) { remainingAttempts = 3; }
+            } else remainingAttempts = 3;
+            if (remainingAttempts > 3) remainingAttempts = 3;
+            if (remainingAttempts < 0) remainingAttempts = 0;
+            updateAttemptsDisplay();
+        }
+
+        function updateAttemptsDisplay() {
+            const disp = document.getElementById("attemptsDisplay");
+            if (disp) disp.innerText = `🎴 Intentos: ${remainingAttempts}/3`;
+            const modalCounter = document.getElementById("modalAttemptCounter");
+            if (modalCounter) modalCounter.innerText = `Intentos restantes hoy: ${remainingAttempts}`;
+        }
+
+        function consumeAttempt() {
+            if (remainingAttempts > 0) { remainingAttempts--; updateAttemptsDisplay(); saveToLocalStorage(); return true; }
+            return false;
+        }
+        function canMakeAttempt() { return remainingAttempts > 0 && !isTodayFlipUsed(); }
+
+        function initializeFreshGame() {
+            cardNumbers = generateUniqueRandomNumbers(TOTAL_CARDS, MAX_NUM);
+            flippedState = new Array(TOTAL_CARDS).fill(false);
+            lastFlipDate = null;
+            lastFlippedIndex = -1;
+            saveToLocalStorage();
+        }
+
+        function loadFromLocalStorage() {
+            const storedNumbers = localStorage.getItem(STORAGE_NUMBERS);
+            const storedFlipped = localStorage.getItem(STORAGE_FLIPPED);
+            const storedDate = localStorage.getItem(STORAGE_LAST_DATE);
+            const storedLastIdx = localStorage.getItem(STORAGE_LAST_CARD_IDX);
+            if (storedNumbers && storedFlipped) {
+                try {
+                    cardNumbers = JSON.parse(storedNumbers);
+                    flippedState = JSON.parse(storedFlipped);
+                    if (cardNumbers.length !== TOTAL_CARDS || flippedState.length !== TOTAL_CARDS) throw new Error();
+                    const uniqueSet = new Set(cardNumbers);
+                    if (uniqueSet.size !== TOTAL_CARDS) throw new Error();
+                } catch(e) { initializeFreshGame(); return; }
+                lastFlipDate = storedDate || null;
+                lastFlippedIndex = (storedLastIdx !== null) ? JSON.parse(storedLastIdx) : -1;
+            } else { initializeFreshGame(); }
+        }
+
+        function isGameComplete() { return flippedState.every(v => v === true); }
+        function isTodayFlipUsed() { return lastFlipDate === getTodayDate(); }
+
+        function updateUI() {
+            const totalFlipped = flippedState.filter(v => v === true).length;
+            document.getElementById("openedCount").innerText = totalFlipped;
+            document.getElementById("remainingCount").innerText = TOTAL_CARDS - totalFlipped;
+        }
+
+        function renderBoard() {
+            const gridContainer = document.getElementById("cardsGrid");
             gridContainer.innerHTML = "";
+            updateUI();
             for (let i = 0; i < TOTAL_CARDS; i++) {
                 const cardDiv = document.createElement("div");
                 cardDiv.className = "card";
                 if (flippedState[i]) {
                     cardDiv.classList.add("flipped");
-                    const numberSpan = document.createElement("span");
-                    numberSpan.innerText = cardNumbers[i];
-                    cardDiv.appendChild(numberSpan);
+                    const spanNum = document.createElement("div");
+                    spanNum.className = "card-number-display";
+                    spanNum.innerText = cardNumbers[i];
+                    cardDiv.appendChild(spanNum);
                 } else {
-                    const hiddenSpan = document.createElement("span");
-                    hiddenSpan.style.display = "none";
-                    hiddenSpan.innerText = "?";
-                    cardDiv.appendChild(hiddenSpan);
+                    const placeholder = document.createElement("div");
+                    placeholder.style.display = "none";
+                    cardDiv.appendChild(placeholder);
+                    cardDiv.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        if (!flippedState[i] && !isGameComplete()) openConfirmModal(i);
+                    });
                 }
-                cardDiv.addEventListener("click", (function(idx) {
-                    return function() { flipCard(idx); };
-                })(i));
                 gridContainer.appendChild(cardDiv);
             }
         }
-        updateStatsAndMessage();
-    }
 
-    function updateStatsAndMessage() {
-        const totalFlipped = flippedState.filter(v => v === true).length;
-        openedCountSpan.innerText = totalFlipped;
-        remainingCountSpan.innerText = TOTAL_CARDS - totalFlipped;
-        const completed = isGameComplete();
-        const usedToday = isTodayFlipUsed();
-
-        if (completed) {
-            statusMsgDiv.innerHTML = "🎯 ¡Colección Completa! 7/7 cartas reveladas 🎯";
-            return;
+        let pendingCardIdx = null;
+        function openConfirmModal(cardIdx) {
+            if (isGameComplete()) { showCustomMessage("🏆 Ya completaste todas las cartas.", false); return; }
+            if (isTodayFlipUsed()) { showCustomMessage("⛅ Ya usaste tu giro de hoy. Vuelve mañana.", true); return; }
+            if (!canMakeAttempt()) { showCustomMessage("❌ No te quedan más intentos para elegir cartas hoy. Mañana tendrás 3 nuevos.", true); return; }
+            if (flippedState[cardIdx]) return;
+            pendingCardIdx = cardIdx;
+            updateAttemptsDisplay();
+            document.getElementById("confirmModal").classList.add("active");
         }
-        if (usedToday) {
-            const lastNum = (lastFlippedIndex !== -1 && flippedState[lastFlippedIndex]) ? cardNumbers[lastFlippedIndex] : "?";
-            statusMsgDiv.innerHTML = `📅 Hoy ya usaste tu giro (N° ${lastNum}). Te faltan ${TOTAL_CARDS - totalFlipped} cartas.`;
-        } else {
-            statusMsgDiv.innerHTML = `Podes girar una carta, te quedan ${TOTAL_CARDS - totalFlipped} restantes`;
-        }
-    }
 
-    function updateCountdownDisplay() {
-        const now = new Date();
-        const midnight = new Date(now);
-        midnight.setHours(24, 0, 0, 0);
-        const diffMs = midnight - now;
-        if (diffMs <= 0) {
-            countdownSpan.innerHTML = "🎲 ¡Nuevo giro disponible!";
-            const todayStr = getTodayDate();
-            if (lastFlipDate !== todayStr && !isGameComplete()) {
-                if (!isTodayFlipUsed()) {
-                    statusMsgDiv.innerHTML = `🌟 ¡La magia renueva! Gira una carta. 🌟`;
+        function closeConfirmModal() { document.getElementById("confirmModal").classList.remove("active"); pendingCardIdx = null; }
+
+        // --- SCRATCH con raspado lento y sonido ---
+        async function startScratchExperience(cardIdx) {
+            if (flippedState[cardIdx] || isTodayFlipUsed() || !canMakeAttempt()) return;
+            currentScratchCardIndex = cardIdx;
+            document.getElementById("prizeNumberDisplay").innerText = cardNumbers[cardIdx];
+            document.getElementById("gameHeader").classList.add("header-hidden");
+            document.getElementById("scratchFullscreen").classList.add("active");
+            document.body.style.overflow = "hidden";
+            scratchCanvasElem = document.getElementById("scratchCanvas");
+            scratchCtx = scratchCanvasElem.getContext("2d", { willReadFrequently: true });
+            await resizeCanvasAndDrawTexture();
+            window.addEventListener("resize", handleResize);
+            attachScratchEvents();
+            autoRevealed = false;
+            scratchCanvasElem.style.opacity = "1";
+            scratchCanvasElem.style.display = "block";
+            if (fadeTimeout) clearTimeout(fadeTimeout);
+        }
+
+        function handleResize() { if (document.getElementById("scratchFullscreen").classList.contains("active")) resizeCanvasAndDrawTexture(); }
+
+        async function resizeCanvasAndDrawTexture() {
+            if (!scratchCanvasElem || !scratchCtx) return;
+            const container = document.querySelector(".scratch-inner");
+            const rect = container.getBoundingClientRect();
+            scratchCanvasElem.width = rect.width;
+            scratchCanvasElem.height = rect.height;
+            scratchCanvasElem.style.width = `${rect.width}px`;
+            scratchCanvasElem.style.height = `${rect.height}px`;
+            const grad = scratchCtx.createLinearGradient(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
+            grad.addColorStop(0, "#a47c44");
+            grad.addColorStop(0.5, "#dbb065");
+            grad.addColorStop(1, "#8c6239");
+            scratchCtx.fillStyle = grad;
+            scratchCtx.fillRect(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
+            for (let i = 0; i < 2000; i++) {
+                scratchCtx.fillStyle = `rgba(220, 190, 120, ${Math.random() * 0.35})`;
+                scratchCtx.beginPath();
+                scratchCtx.arc(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 4 + 1, 0, Math.PI * 2);
+                scratchCtx.fill();
+            }
+            scratchCtx.globalCompositeOperation = "source-over";
+        }
+
+        function attachScratchEvents() {
+            if (!scratchCanvasElem) return;
+            const getCoords = (e) => {
+                const rect = scratchCanvasElem.getBoundingClientRect();
+                const scaleX = scratchCanvasElem.width / rect.width;
+                const scaleY = scratchCanvasElem.height / rect.height;
+                let cx, cy;
+                if (e.touches) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+                else { cx = e.clientX; cy = e.clientY; }
+                let x = (cx - rect.left) * scaleX;
+                let y = (cy - rect.top) * scaleY;
+                x = Math.min(Math.max(0, x), scratchCanvasElem.width);
+                y = Math.min(Math.max(0, y), scratchCanvasElem.height);
+                return { x, y };
+            };
+            let lastSound = 0;
+            const scratchAction = (e) => {
+                if (!scratchCtx || autoRevealed) return;
+                e.preventDefault();
+                const now = Date.now();
+                if (now - lastSound > 70) { playScratchSound(); lastSound = now; }
+                const { x, y } = getCoords(e);
+                scratchCtx.globalCompositeOperation = "destination-out";
+                scratchCtx.beginPath();
+                scratchCtx.arc(x, y, 24, 0, Math.PI * 2);
+                scratchCtx.fill();
+                scratchCtx.globalCompositeOperation = "source-over";
+                checkScratchProgress();
+            };
+            const startDraw = (e) => { if (!autoRevealed) { isDrawing = true; scratchAction(e); } };
+            const stopDraw = () => { isDrawing = false; };
+            const moveDraw = (e) => { if (isDrawing && !autoRevealed) scratchAction(e); };
+            scratchCanvasElem.addEventListener("mousedown", startDraw);
+            window.addEventListener("mousemove", moveDraw);
+            window.addEventListener("mouseup", stopDraw);
+            scratchCanvasElem.addEventListener("touchstart", startDraw);
+            window.addEventListener("touchmove", moveDraw);
+            window.addEventListener("touchend", stopDraw);
+            scratchCanvasElem._handlers = { startDraw, moveDraw, stopDraw };
+        }
+
+        function checkScratchProgress() {
+            if (!scratchCtx || autoRevealed) return;
+            const w = scratchCanvasElem.width, h = scratchCanvasElem.height;
+            if (w === 0 || h === 0) return;
+            let cleared = 0, total = 0;
+            const step = 32;
+            for (let y = 0; y < h; y += step) {
+                for (let x = 0; x < w; x += step) {
+                    const px = scratchCtx.getImageData(x, y, 1, 1).data;
+                    if (px[3] === 0) cleared++;
+                    total++;
                 }
+            }
+            const ratio = total > 0 ? cleared / total : 0;
+            if (ratio >= 0.72 && !autoRevealed) {
+                autoRevealed = true;
+                scratchCanvasElem.style.transition = "opacity 0.8s ease-out";
+                scratchCanvasElem.style.opacity = "0";
+                fadeTimeout = setTimeout(() => { if (scratchCanvasElem) scratchCanvasElem.style.display = "none"; }, 800);
+            }
+        }
+
+        function cleanupScratchEvents() {
+            if (!scratchCanvasElem) return;
+            const h = scratchCanvasElem._handlers;
+            if (h) {
+                scratchCanvasElem.removeEventListener("mousedown", h.startDraw);
+                window.removeEventListener("mousemove", h.moveDraw);
+                window.removeEventListener("mouseup", h.stopDraw);
+                scratchCanvasElem.removeEventListener("touchstart", h.startDraw);
+                window.removeEventListener("touchmove", h.moveDraw);
+                window.removeEventListener("touchend", h.stopDraw);
+            }
+            window.removeEventListener("resize", handleResize);
+        }
+
+        async function closeScratchAndSave() {
+            if (currentScratchCardIndex !== null && !flippedState[currentScratchCardIndex] && !isTodayFlipUsed()) {
+                if (canMakeAttempt()) {
+                    consumeAttempt();
+                    flippedState[currentScratchCardIndex] = true;
+                    lastFlipDate = getTodayDate();
+                    lastFlippedIndex = currentScratchCardIndex;
+                    saveToLocalStorage();
+                    showCustomMessage(`✨ Descubriste el número ${cardNumbers[currentScratchCardIndex]}`, false);
+                } else {
+                    showCustomMessage("No quedan intentos, la carta no fue desbloqueada.", true);
+                }
+            }
+            cleanupScratchEvents();
+            document.getElementById("scratchFullscreen").classList.remove("active");
+            document.getElementById("gameHeader").classList.remove("header-hidden");
+            document.body.style.overflow = "";
+            if (scratchCanvasElem) scratchCanvasElem.style.opacity = "1";
+            currentScratchCardIndex = null;
+            renderBoard();
+            updateAttemptsDisplay();
+        }
+
+        function onConfirmChoice() {
+            if (pendingCardIdx === null) return;
+            const idx = pendingCardIdx;
+            closeConfirmModal();
+            if (flippedState[idx] || isTodayFlipUsed() || !canMakeAttempt()) {
+                showCustomMessage("No puedes elegir esta carta ahora.", true);
+                return;
+            }
+            startScratchExperience(idx);
+        }
+        function onCancelChoice() { closeConfirmModal(); }
+
+        function updateCountdownDisplay() {
+            const now = new Date();
+            const midnight = new Date(now);
+            midnight.setHours(24,0,0,0);
+            const diff = midnight - now;
+            if (diff <= 0) {
+                document.getElementById("countdownTimer").innerHTML = "✨ Nuevo día ✨";
+                if (lastFlipDate !== getTodayDate()) { loadAttempts(); renderBoard(); }
+                return;
+            }
+            const h = Math.floor(diff/3600000);
+            const m = Math.floor((diff%3600000)/60000);
+            const s = Math.floor((diff%60000)/1000);
+            document.getElementById("countdownTimer").innerHTML = `⏳ próximo: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        let lastDateCheck = getTodayDate();
+        function checkDateReset() {
+            const today = getTodayDate();
+            if (today !== lastDateCheck) {
+                lastDateCheck = today;
+                loadFromLocalStorage();
+                loadAttempts();
                 renderBoard();
             }
-            return;
         }
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutes = Math.floor((diffMs % (3600000)) / 60000);
-        const seconds = Math.floor((diffMs % 60000) / 1000);
-        countdownSpan.innerHTML = `Podes abrir la próxima carta en: ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-    }
 
-    let lastKnownDate = getTodayDate();
-    function checkDateChangeAndRefresh() {
-        const newDate = getTodayDate();
-        if (newDate !== lastKnownDate) {
-            lastKnownDate = newDate;
+        let shuffleInterval;
+        function startShuffle() {
+            if (shuffleInterval) clearInterval(shuffleInterval);
+            shuffleInterval = setInterval(() => {
+                if (!document.getElementById("scratchFullscreen").classList.contains("active") && !isGameComplete()) {
+                    const cards = document.querySelectorAll('.card:not(.flipped)');
+                    cards.forEach(c => {
+                        c.style.animation = "elegantShuffle 0.6s ease-in-out forwards";
+                        setTimeout(() => c.style.animation = "", 650);
+                    });
+                }
+            }, 30000);
+        }
+
+        document.getElementById("confirmYesBtn").addEventListener("click", onConfirmChoice);
+        document.getElementById("confirmNoBtn").addEventListener("click", onCancelChoice);
+        document.getElementById("closeScratchBtn").addEventListener("click", () => closeScratchAndSave());
+
+        function init() {
+            initAudio();
             loadFromLocalStorage();
+            loadAttempts();
+            if (!cardNumbers || cardNumbers.length !== TOTAL_CARDS) initializeFreshGame();
+            if (!flippedState || flippedState.length !== TOTAL_CARDS) flippedState = new Array(TOTAL_CARDS).fill(false);
             renderBoard();
-            updateStatsAndMessage();
-            if (!isTodayFlipUsed() && !isGameComplete()) {
-                statusMsgDiv.innerHTML = "🌅 ¡Nuevo día mágico! Gira una carta ahora 🌅";
-                setTimeout(() => triggerShuffleAnimation(), 300);
-            }
+            startShuffle();
+            setInterval(() => { updateCountdownDisplay(); checkDateReset(); }, 1000);
         }
-    }
-
-    let countdownTimer = null;
-    function startCountdownUpdater() {
-        if (countdownTimer) clearInterval(countdownTimer);
-        countdownTimer = setInterval(() => {
-            updateCountdownDisplay();
-            checkDateChangeAndRefresh();
-        }, 1000);
-    }
-
-    function init() {
-        loadFromLocalStorage();
-        if (!cardNumbers || cardNumbers.length !== TOTAL_CARDS) {
-            initializeFreshGame();
-        }
-        if (!flippedState || flippedState.length !== TOTAL_CARDS) {
-            flippedState = new Array(TOTAL_CARDS).fill(false);
-            saveToLocalStorage();
-        }
-        const uniqueCheck = new Set(cardNumbers);
-        if (uniqueCheck.size !== TOTAL_CARDS || cardNumbers.some(n => n < 1 || n > NUMBER_POOL)) {
-            cardNumbers = generateUniqueRandomNumbers(TOTAL_CARDS, NUMBER_POOL);
-            saveToLocalStorage();
-        }
-        lastKnownDate = getTodayDate();
-        renderBoard();
-        startPeriodicShuffle();
-        startCountdownUpdater();
-        setTimeout(() => {
-            triggerShuffleAnimation();
-        }, 400);
-    }
-
-    window.addEventListener("beforeunload", () => {
-        if (shuffleInterval) clearInterval(shuffleInterval);
-        saveToLocalStorage();
-    });
-    
-    document.addEventListener("DOMContentLoaded", init);
-</script>
+        init();
+    </script>
 </body>
 </html>
