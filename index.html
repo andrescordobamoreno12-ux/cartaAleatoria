@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Giro Mágico | Raspa Difícil + Sonido Real</title>
+    <title>Giro Mágico | Raspa con Sonido de Borrador</title>
     <style>
         * {
             margin: 0;
@@ -348,7 +348,6 @@
             background: radial-gradient(circle at center, #1e1a15, #020100);
         }
 
-        /* Número semi-oculto inicialmente con opacidad baja y blur, más difícil de ver hasta raspar mucho */
         .prize-number-container {
             position: absolute;
             display: flex;
@@ -371,12 +370,11 @@
             border-radius: 80px;
             backdrop-filter: blur(12px);
             letter-spacing: 8px;
-            opacity: 0.55;
-            filter: blur(4px);
+            opacity: 0.35;
+            filter: blur(8px);
             transition: opacity 0.4s, filter 0.4s;
         }
 
-        /* Canvas de raspado más resistente, con textura granulada densa */
         .scratch-canvas {
             position: absolute;
             top: 0;
@@ -460,7 +458,7 @@
 <body>
 
     <header class="game-header" id="gameHeader">
-        <div class="title-area"><h1>✨ RASPA DIFÍCIL ✨</h1></div>
+        <div class="title-area"><h1>✨ RASPA MÁGICA ✨</h1></div>
         <div class="stats">
             <div class="stat-badge"><span id="openedCount">0</span>/<span id="totalCards">7</span></div>
             <div class="stat-badge">✧ <span id="remainingCount">7</span> rest.</div>
@@ -478,7 +476,7 @@
     <div id="confirmModal" class="modal-confirm">
         <div class="modal-card">
             <div class="attempt-counter" id="modalAttemptCounter">Intentos restantes: 3</div>
-            <p>🔎 Elegí una carta<br>Raspá con esfuerzo para revelar el número oculto</p>
+            <p>🔍 Elegí una carta<br>Raspá para encontrar el número escondido</p>
             <div class="modal-buttons">
                 <button id="confirmYesBtn" class="modal-btn confirm">✨ Raspar</button>
                 <button id="confirmNoBtn" class="modal-btn cancel">🔄 Otra carta</button>
@@ -488,7 +486,6 @@
 
     <div id="customToast" class="custom-toast"></div>
 
-    <!-- Pantalla de raspado mejorada: número borroso y difícil -->
     <div id="scratchFullscreen" class="scratch-fullscreen">
         <div class="close-full" id="closeScratchBtn">✕</div>
         <div class="scratch-inner">
@@ -496,7 +493,7 @@
                 <div id="prizeNumberDisplay" class="prize-number">??</div>
             </div>
             <canvas id="scratchCanvas" class="scratch-canvas"></canvas>
-            <div class="instruction-text">🔨 RASPADO PESADO - DESLIZA CON FUERZA PARA DESCUBRIR 🔨</div>
+            <div class="instruction-text">✍️ DESLIZA COMO BORRADOR - SOLO SUENA AL RASPAR ✍️</div>
         </div>
     </div>
 
@@ -523,88 +520,100 @@
         let autoRevealed = false;
         let fadeTimeout = null;
 
-        // --- SISTEMA DE AUDIO MEJORADO CON SONIDO REAL DE RASPAJO (generador de ruido blanco dinámico) ---
-        let audioContext = null;
+        // --- SONIDO DE BORRADOR: solo se activa mientras se dibuja/raspa, como un lápiz o goma ---
+        let audioCtx = null;
         let scratchGain = null;
-        let scratchOsc = null;
-        let isAudioActive = false;
+        let noiseSource = null;
+        let scratchFilter = null;
+        let isSoundActive = false;
 
-        function initRealisticScratchAudio() {
+        function initEraserSound() {
             try {
-                if (audioContext && audioContext.state !== 'closed') return;
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                audioContext = new AudioContextClass();
-                scratchGain = audioContext.createGain();
+                if (!AudioContextClass) return null;
+                if (audioCtx && audioCtx.state !== 'closed') return;
+                audioCtx = new AudioContextClass();
+                scratchGain = audioCtx.createGain();
                 scratchGain.gain.value = 0;
-                scratchGain.connect(audioContext.destination);
+                scratchGain.connect(audioCtx.destination);
                 
-                // Crear un buffer de ruido blanco filtrado para sonido de raspado realista
+                // Crear buffer de ruido blanco suave (sonido de borrador / raspado de lápiz)
                 const bufferSize = 4096;
-                const noiseNode = (() => {
-                    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                    const data = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) {
-                        data[i] = (Math.random() * 2 - 1) * 0.6;
-                    }
-                    const noise = audioContext.createBufferSource();
-                    noise.buffer = buffer;
-                    noise.loop = true;
-                    const biquad = audioContext.createBiquadFilter();
-                    biquad.type = "bandpass";
-                    biquad.frequency.value = 1800;
-                    biquad.Q.value = 1.2;
-                    noise.connect(biquad);
-                    biquad.connect(scratchGain);
-                    noise.start();
-                    return { noise, biquad };
-                })();
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    // Ruido suave y áspero a la vez, simulando fricción
+                    data[i] = (Math.random() * 2 - 1) * 0.45;
+                }
+                
+                noiseSource = audioCtx.createBufferSource();
+                noiseSource.buffer = noiseBuffer;
+                noiseSource.loop = true;
+                
+                // Filtro para dar textura de "borrador" - frecuencias medias con un toque agudo
+                scratchFilter = audioCtx.createBiquadFilter();
+                scratchFilter.type = "bandpass";
+                scratchFilter.frequency.value = 1200;
+                scratchFilter.Q.value = 1.1;
+                
+                noiseSource.connect(scratchFilter);
+                scratchFilter.connect(scratchGain);
+                noiseSource.start();
                 
                 return {
-                    playStart: () => {
-                        if (!audioContext) return;
-                        if (audioContext.state === 'suspended') audioContext.resume();
-                        if (scratchGain) scratchGain.gain.value = 0.48;
-                        isAudioActive = true;
-                    },
-                    playScratch: () => {
-                        if (!audioContext || !scratchGain) return;
-                        if (audioContext.state === 'suspended') audioContext.resume();
-                        if (scratchGain.gain.value < 0.55) scratchGain.gain.value = 0.55;
-                        // Pequeño pico dinámico
-                        setTimeout(() => {
-                            if (scratchGain && isAudioActive) scratchGain.gain.value = 0.48;
-                        }, 55);
-                    },
-                    playStop: () => {
-                        if (scratchGain) {
-                            scratchGain.gain.value = 0;
-                            isAudioActive = false;
+                    start: () => {
+                        if (!audioCtx || !scratchGain) return;
+                        if (audioCtx.state === 'suspended') audioCtx.resume();
+                        if (!isSoundActive) {
+                            scratchGain.gain.value = 0.32;
+                            isSoundActive = true;
                         }
+                    },
+                    stop: () => {
+                        if (scratchGain && isSoundActive) {
+                            scratchGain.gain.value = 0;
+                            isSoundActive = false;
+                        }
+                    },
+                    scratchTick: () => {
+                        if (!audioCtx || !scratchGain) return;
+                        if (audioCtx.state === 'suspended') audioCtx.resume();
+                        if (!isSoundActive) {
+                            scratchGain.gain.value = 0.32;
+                            isSoundActive = true;
+                        }
+                        // pequeño refuerzo momentáneo para dar sensación de fricción
+                        scratchGain.gain.value = 0.42;
+                        setTimeout(() => {
+                            if (scratchGain && isSoundActive) scratchGain.gain.value = 0.32;
+                        }, 45);
                     }
                 };
             } catch(e) {
                 console.warn("Audio no soportado", e);
-                return { playStart:()=>{}, playScratch:()=>{}, playStop:()=>{} };
+                return null;
             }
         }
 
-        let scratchSoundEngine = null;
-        function ensureAudioEngine() {
-            if (!scratchSoundEngine) scratchSoundEngine = initRealisticScratchAudio();
-            return scratchSoundEngine;
+        let eraserAudio = null;
+        function getEraserAudio() {
+            if (!eraserAudio) eraserAudio = initEraserSound();
+            return eraserAudio;
         }
 
-        function playScratchSoundEffect() {
-            const engine = ensureAudioEngine();
-            if (engine && engine.playScratch) engine.playScratch();
+        function startScratchSoundOnly() {
+            const audio = getEraserAudio();
+            if (audio && audio.start) audio.start();
         }
-        function startScratchSound() {
-            const engine = ensureAudioEngine();
-            if (engine && engine.playStart) engine.playStart();
+        
+        function stopScratchSoundOnly() {
+            const audio = getEraserAudio();
+            if (audio && audio.stop) audio.stop();
         }
-        function stopScratchSound() {
-            const engine = ensureAudioEngine();
-            if (engine && engine.playStop) engine.playStop();
+        
+        function playScratchTick() {
+            const audio = getEraserAudio();
+            if (audio && audio.scratchTick) audio.scratchTick();
         }
 
         function showCustomMessage(msg, isError = false) {
@@ -744,14 +753,13 @@
 
         function closeConfirmModal() { document.getElementById("confirmModal").classList.remove("active"); pendingCardIdx = null; }
 
-        // --- RASPAJS CON TEXTURA DENSA Y DIFICULTAD ---
+        // --- SCRATCH con textura densa y sonido tipo borrador (solo al raspar) ---
         async function startScratchExperience(cardIdx) {
             if (flippedState[cardIdx] || isTodayFlipUsed() || !canMakeAttempt()) return;
             currentScratchCardIndex = cardIdx;
             const hiddenNumber = cardNumbers[cardIdx];
             const numberDisplay = document.getElementById("prizeNumberDisplay");
             numberDisplay.innerText = hiddenNumber;
-            // Número muy oculto: blur fuerte + opacidad baja
             numberDisplay.style.opacity = "0.35";
             numberDisplay.style.filter = "blur(8px)";
             
@@ -761,23 +769,21 @@
             
             scratchCanvasElem = document.getElementById("scratchCanvas");
             scratchCtx = scratchCanvasElem.getContext("2d", { willReadFrequently: true });
-            await resizeCanvasAndDrawHardScratchLayer();
+            await resizeCanvasAndDrawHardLayer();
             window.addEventListener("resize", handleResize);
-            attachScratchEvents();
+            attachScratchEventsWithSound();
             autoRevealed = false;
             scratchCanvasElem.style.opacity = "1";
             scratchCanvasElem.style.display = "block";
             if (fadeTimeout) clearTimeout(fadeTimeout);
-            startScratchSound(); // Inicia el sonido ambiente de raspado
         }
 
         function handleResize() { 
             if (document.getElementById("scratchFullscreen").classList.contains("active")) 
-                resizeCanvasAndDrawHardScratchLayer(); 
+                resizeCanvasAndDrawHardLayer(); 
         }
 
-        // Capa de raspado MUY densa y difícil: múltiples capas, puntos y patrones duros
-        async function resizeCanvasAndDrawHardScratchLayer() {
+        async function resizeCanvasAndDrawHardLayer() {
             if (!scratchCanvasElem || !scratchCtx) return;
             const container = document.querySelector(".scratch-inner");
             const rect = container.getBoundingClientRect();
@@ -786,7 +792,6 @@
             scratchCanvasElem.style.width = `${rect.width}px`;
             scratchCanvasElem.style.height = `${rect.height}px`;
             
-            // Fondo base metálico oscuro
             const grad = scratchCtx.createLinearGradient(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
             grad.addColorStop(0, "#4a3922");
             grad.addColorStop(0.5, "#6e5436");
@@ -794,24 +799,21 @@
             scratchCtx.fillStyle = grad;
             scratchCtx.fillRect(0, 0, scratchCanvasElem.width, scratchCanvasElem.height);
             
-            // Textura espesa tipo "scratch card" dificil: muchos puntos y líneas
-            for (let i = 0; i < 5000; i++) {
+            for (let i = 0; i < 4800; i++) {
                 scratchCtx.fillStyle = `rgba(180, 150, 100, ${Math.random() * 0.5})`;
                 scratchCtx.beginPath();
                 scratchCtx.arc(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 7 + 1, 0, Math.PI * 2);
                 scratchCtx.fill();
             }
-            // Patrón de rejilla cruzada
             scratchCtx.beginPath();
             scratchCtx.strokeStyle = "rgba(100, 70, 40, 0.7)";
             scratchCtx.lineWidth = 2.5;
-            for (let i = 0; i < 300; i++) {
+            for (let i = 0; i < 400; i++) {
                 scratchCtx.beginPath();
                 scratchCtx.moveTo(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height);
                 scratchCtx.lineTo(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height);
                 scratchCtx.stroke();
             }
-            // capa adicional de "escamas" 
             for (let s = 0; s < 1800; s++) {
                 scratchCtx.fillStyle = `rgba(210, 170, 100, ${Math.random() * 0.45})`;
                 scratchCtx.fillRect(Math.random() * scratchCanvasElem.width, Math.random() * scratchCanvasElem.height, Math.random() * 12 + 2, Math.random() * 12 + 2);
@@ -819,7 +821,7 @@
             scratchCtx.globalCompositeOperation = "source-over";
         }
 
-        function attachScratchEvents() {
+        function attachScratchEventsWithSound() {
             if (!scratchCanvasElem) return;
             const getCoords = (e) => {
                 const rect = scratchCanvasElem.getBoundingClientRect();
@@ -834,28 +836,41 @@
                 y = Math.min(Math.max(0, y), scratchCanvasElem.height);
                 return { x, y };
             };
-            let lastScratchSound = 0;
+            
+            let lastSoundTime = 0;
             const scratchAction = (e) => {
                 if (!scratchCtx || autoRevealed) return;
                 e.preventDefault();
                 const now = Date.now();
-                if (now - lastScratchSound > 45) { 
-                    playScratchSoundEffect(); 
-                    lastScratchSound = now;
+                // Sonido tipo borrador sólo mientras se desliza, con intervalo para no saturar
+                if (now - lastSoundTime > 35) {
+                    playScratchTick();  // efecto breve de raspado
+                    lastSoundTime = now;
                 }
                 const { x, y } = getCoords(e);
                 scratchCtx.globalCompositeOperation = "destination-out";
-                // Brocha de raspado más pequeña para que sea más difícil y preciso
                 scratchCtx.beginPath();
                 scratchCtx.arc(x, y, 18, 0, Math.PI * 2);
                 scratchCtx.fill();
-                // añadir algo de ruido extra
                 scratchCtx.globalCompositeOperation = "source-over";
                 checkScratchProgressAndReveal();
             };
-            const startDraw = (e) => { if (!autoRevealed) { isDrawing = true; scratchAction(e); } };
-            const stopDraw = () => { isDrawing = false; };
+            
+            const startDraw = (e) => { 
+                if (!autoRevealed) { 
+                    isDrawing = true; 
+                    startScratchSoundOnly();  // inicia sonido continuo suave al comenzar a rayar
+                    scratchAction(e); 
+                } 
+            };
+            const stopDraw = () => { 
+                if (isDrawing) {
+                    isDrawing = false; 
+                    stopScratchSoundOnly();  // detiene sonido al soltar
+                }
+            };
             const moveDraw = (e) => { if (isDrawing && !autoRevealed) scratchAction(e); };
+            
             scratchCanvasElem.addEventListener("mousedown", startDraw);
             window.addEventListener("mousemove", moveDraw);
             window.addEventListener("mouseup", stopDraw);
@@ -870,7 +885,7 @@
             const w = scratchCanvasElem.width, h = scratchCanvasElem.height;
             if (w === 0 || h === 0) return;
             let cleared = 0, total = 0;
-            const step = 24; // evaluar por zonas
+            const step = 24;
             for (let y = 0; y < h; y += step) {
                 for (let x = 0; x < w; x += step) {
                     const px = scratchCtx.getImageData(x, y, 1, 1).data;
@@ -879,23 +894,19 @@
                 }
             }
             const ratio = total > 0 ? cleared / total : 0;
-            // Requerimos 72% raspado para revelar completamente -> más difícil
-            if (ratio >= 0.72 && !autoRevealed) {
+            if (ratio >= 0.70 && !autoRevealed) {
                 autoRevealed = true;
-                // Revelar el número completamente: quitar blur y aumentar opacidad
                 const numDiv = document.getElementById("prizeNumberDisplay");
                 numDiv.style.transition = "filter 0.8s, opacity 0.8s";
                 numDiv.style.opacity = "1";
                 numDiv.style.filter = "blur(0px)";
-                // Desvanecer el canvas lentamente
                 scratchCanvasElem.style.transition = "opacity 1s ease-out";
                 scratchCanvasElem.style.opacity = "0";
                 fadeTimeout = setTimeout(() => { if (scratchCanvasElem) scratchCanvasElem.style.display = "none"; }, 1000);
-                stopScratchSound();
-            } else if (ratio > 0.35) {
-                // A medida que se raspa, el número se va aclarando gradualmente (efecto buscado)
+                stopScratchSoundOnly();
+            } else if (ratio > 0.3) {
                 const numDiv = document.getElementById("prizeNumberDisplay");
-                const newOpacity = Math.min(0.35 + ratio * 0.65, 1);
+                const newOpacity = Math.min(0.35 + ratio * 0.7, 1);
                 const newBlur = Math.max(0, 8 - ratio * 11);
                 numDiv.style.opacity = newOpacity.toString();
                 numDiv.style.filter = `blur(${newBlur}px)`;
@@ -914,7 +925,7 @@
                 window.removeEventListener("touchend", h.stopDraw);
             }
             window.removeEventListener("resize", handleResize);
-            stopScratchSound();
+            stopScratchSoundOnly();
         }
 
         async function closeScratchAndSave() {
@@ -1001,7 +1012,7 @@
         document.getElementById("closeScratchBtn").addEventListener("click", () => closeScratchAndSave());
 
         function init() {
-            ensureAudioEngine();
+            getEraserAudio(); // precarga audio
             loadFromLocalStorage();
             loadAttempts();
             if (!cardNumbers || cardNumbers.length !== TOTAL_CARDS) initializeFreshGame();
